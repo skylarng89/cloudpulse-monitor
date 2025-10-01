@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:3000/api',  // ← Point to backend server
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -12,7 +12,7 @@ const api = axios.create({
 // Request interceptor for logging
 api.interceptors.request.use(
   (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`)
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`)
     return config
   },
   (error) => {
@@ -24,36 +24,33 @@ api.interceptors.request.use(
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
+    console.log(`API Response: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`)
     return response
   },
   (error) => {
-    console.error('API Response Error:', error.response?.data || error.message)
+    console.error('API Response Error:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    })
 
-    // Handle common error cases
-    if (error.response?.status === 404) {
-      throw new Error('Resource not found')
-    } else if (error.response?.status === 400) {
-      throw new Error(error.response.data?.error || 'Invalid request')
-    } else if (error.response?.status >= 500) {
-      throw new Error('Server error occurred')
-    } else if (error.code === 'ECONNABORTED') {
-      throw new Error('Request timeout - please try again')
-    } else if (!error.response) {
-      throw new Error('Network error - please check your connection')
-    }
+    // Transform error for better handling
+    const customError = new Error(error.response?.data?.error || error.message)
+    customError.status = error.response?.status
+    customError.response = error.response
 
-    return Promise.reject(error)
+    return Promise.reject(customError)
   }
 )
 
 class ApiService {
-  // Monitor Management
+  // Monitor management
   async getMonitors() {
     const response = await api.get('/monitors')
     return response.data
   }
 
-  async getMonitorById(id) {
+  async getMonitor(id) {
     const response = await api.get(`/monitors/${id}`)
     return response.data
   }
@@ -73,55 +70,40 @@ class ApiService {
     return response.data
   }
 
-  async getMonitorStats() {
-    const response = await api.get('/monitors/stats')
+  async getMonitorChecks(id) {
+    const response = await api.get(`/monitors/${id}/checks`)
     return response.data
   }
 
-  // Monitor Checks
-  async getMonitorChecks(monitorId, options = {}) {
-    const params = new URLSearchParams()
-    if (options.limit) params.append('limit', options.limit)
-    if (options.hours) params.append('hours', options.hours)
-
-    const response = await api.get(`/monitors/${monitorId}/checks?${params}`)
+  // Monitoring system
+  async getSystemStatus() {
+    const response = await api.get('/status')
     return response.data
   }
 
-  async getMonitorCheckStats(monitorId, hours = 24) {
-    const response = await api.get(`/monitors/${monitorId}/stats?hours=${hours}`)
+  async getRecentChecks(limit = 50) {
+    const response = await api.get(`/checks?limit=${limit}`)
     return response.data
   }
 
-  async checkMonitor(monitorId) {
-    const response = await api.post(`/monitors/${monitorId}/check`)
+  async getIncidents() {
+    const response = await api.get('/incidents')
     return response.data
   }
 
-  // System Monitoring
-  async getSystemStats(hours = 24) {
-    const response = await api.get(`/system/stats?hours=${hours}`)
+  async getUptimeStats(days = 30) {
+    const response = await api.get(`/uptime?days=${days}`)
     return response.data
   }
 
-  async getMonitoringStats(hours = 24) {
-    const response = await api.get(`/monitoring/stats?hours=${hours}`)
-    return response.data
-  }
-
-  async getHTTPStats(hours = 24) {
-    const response = await api.get(`/monitoring/http-stats?hours=${hours}`)
-    return response.data
-  }
-
-  // Scheduler Control
+  // Scheduler management
   async getSchedulerStatus() {
     const response = await api.get('/scheduler/status')
     return response.data
   }
 
-  async getScheduleInfo() {
-    const response = await api.get('/scheduler/schedule')
+  async getScheduledJobs() {
+    const response = await api.get('/scheduler/jobs')
     return response.data
   }
 
@@ -140,8 +122,8 @@ class ApiService {
     return response.data
   }
 
-  async triggerManualCheck() {
-    const response = await api.post('/scheduler/manual-check')
+  async runMonitorCheck(monitorId) {
+    const response = await api.post(`/scheduler/run/${monitorId}`)
     return response.data
   }
 

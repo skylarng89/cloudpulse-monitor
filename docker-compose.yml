@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # CloudPulse Monitor Backend
+  cloudpulse-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloudpulse-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  # ← Backend API on port 3000
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./data:/app/data # SQLite database persistence
+    networks:
+      - cloudpulse-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http=require('http');const req=http.request({hostname:'localhost',port:3000,path:'/'},res=>{process.exit(res.statusCode===200?0:1)});req.on('error',()=>process.exit(1));req.end();"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # CloudPulse Monitor Frontend
+  cloudpulse-frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    container_name: cloudpulse-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:80"  # ← Frontend dashboard on port 3001
+    depends_on:
+      - cloudpulse-backend
+    networks:
+      - cloudpulse-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  cloudpulse-network:
+    driver: bridge
