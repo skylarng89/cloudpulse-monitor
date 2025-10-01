@@ -1,6 +1,7 @@
 {
-  "name": "infra-uptime-frontend",
+  "name": "cloudpulse-monitor-frontend",
   "version": "0.1.0",
+  "description": "Fast and simple uptime monitoring tool frontend",
   "private": true,
   "type": "module",
   "scripts": {

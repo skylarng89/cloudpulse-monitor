@@ -7,6 +7,18 @@
       </button>
     </div>
 
+    <!-- Connection Status -->
+    <div v-if="connectionError" class="connection-error">
+      <p>⚠️ Unable to connect to backend: {{ connectionError }}</p>
+      <button @click="retryConnection" class="btn-secondary">Retry Connection</button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading && !connectionError" class="loading-state">
+      <p>Loading monitors...</p>
+    </div>
+
+    <!-- Add Monitor Modal -->
     <div v-if="showAddForm" class="modal-overlay" @click="showAddForm = false">
       <div class="modal" @click.stop>
         <h3>Add New Monitor</h3>
@@ -19,7 +31,9 @@
               type="text"
               required
               placeholder="My Website"
+              :class="{ 'error': validationErrors.name }"
             />
+            <span v-if="validationErrors.name" class="error-message">{{ validationErrors.name }}</span>
           </div>
 
           <div class="form-group">
@@ -30,7 +44,9 @@
               type="url"
               required
               placeholder="https://example.com"
+              :class="{ 'error': validationErrors.url }"
             />
+            <span v-if="validationErrors.url" class="error-message">{{ validationErrors.url }}</span>
           </div>
 
           <div class="form-group">
@@ -51,23 +67,31 @@
               min="30"
               max="3600"
               required
+              :class="{ 'error': validationErrors.interval }"
             />
+            <span v-if="validationErrors.interval" class="error-message">{{ validationErrors.interval }}</span>
           </div>
 
           <div class="form-actions">
-            <button type="button" @click="showAddForm = false" class="btn-secondary">
+            <button type="button" @click="cancelAdd" class="btn-secondary">
               Cancel
             </button>
-            <button type="submit" class="btn-primary">
-              Add Monitor
+            <button type="submit" :disabled="submitting" class="btn-primary">
+              {{ submitting ? 'Adding...' : 'Add Monitor' }}
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <div class="monitors-table">
-      <table>
+    <!-- Monitors Table -->
+    <div v-if="!loading && !connectionError" class="monitors-table">
+      <div v-if="monitors.length === 0" class="no-monitors">
+        <p>No monitors configured yet.</p>
+        <p>Add your first monitor to start monitoring your websites and services.</p>
+      </div>
+
+      <table v-else>
         <thead>
           <tr>
             <th>Name</th>
@@ -85,25 +109,45 @@
             <td>{{ monitor.type.toUpperCase() }}</td>
             <td>{{ monitor.interval }}s</td>
             <td>
-              <span class="status-badge" :class="monitor.status">
-                {{ monitor.status }}
+              <span class="status-badge" :class="getMonitorStatus(monitor)">
+                {{ getMonitorStatusText(monitor) }}
               </span>
             </td>
             <td>
-              <button @click="deleteMonitor(monitor.id)" class="btn-danger">
-                Delete
+              <button @click="checkMonitor(monitor.id)" class="btn-small" title="Check Now">
+                🔍
+              </button>
+              <button @click="confirmDelete(monitor)" class="btn-small btn-danger" title="Delete">
+                🗑️
               </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="deleteTarget" class="modal-overlay" @click="deleteTarget = null">
+      <div class="modal" @click.stop>
+        <h3>Delete Monitor</h3>
+        <p>Are you sure you want to delete "{{ deleteTarget.name }}"?</p>
+        <p class="warning">This action cannot be undone.</p>
+        <div class="form-actions">
+          <button @click="deleteTarget = null" class="btn-secondary">
+            Cancel
+          </button>
+          <button @click="deleteMonitor" :disabled="deleting" class="btn-danger">
+            {{ deleting ? 'Deleting...' : 'Delete Monitor' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import apiService from '@/services/api'
 
 interface Monitor {
   id: number
@@ -111,11 +155,18 @@ interface Monitor {
   url: string
   type: string
   interval: number
-  status: 'up' | 'down'
+  active: boolean
+  created_at: string
 }
 
 const monitors = ref<Monitor[]>([])
 const showAddForm = ref(false)
+const loading = ref(true)
+const submitting = ref(false)
+const deleting = ref(false)
+const connectionError = ref('')
+const deleteTarget = ref<Monitor | null>(null)
+
 const newMonitor = ref({
   name: '',
   url: '',
@@ -123,39 +174,141 @@ const newMonitor = ref({
   interval: 60
 })
 
+const validationErrors = ref<Record<string, string>>({})
+
 const fetchMonitors = async () => {
   try {
-    const response = await axios.get('/api/monitors')
-    monitors.value = response.data.map((monitor: any) => ({
-      ...monitor,
-      status: Math.random() > 0.8 ? 'down' : 'up'
-    }))
+    loading.value = true
+    connectionError.value = ''
+
+    const data = await apiService.getMonitors()
+    monitors.value = data
   } catch (error) {
-    console.error('Failed to fetch monitors:', error)
+    console.error('Error fetching monitors:', error)
+    connectionError.value = error.message || 'Failed to connect to backend'
+  } finally {
+    loading.value = false
   }
+}
+
+const validateForm = () => {
+  validationErrors.value = {}
+  let isValid = true
+
+  // Name validation
+  if (!newMonitor.value.name.trim()) {
+    validationErrors.value.name = 'Monitor name is required'
+    isValid = false
+  } else if (newMonitor.value.name.length > 100) {
+    validationErrors.value.name = 'Name must be less than 100 characters'
+    isValid = false
+  }
+
+  // URL validation
+  if (!newMonitor.value.url.trim()) {
+    validationErrors.value.url = 'URL is required'
+    isValid = false
+  } else {
+    try {
+      const url = new URL(newMonitor.value.url)
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        validationErrors.value.url = 'URL must use HTTP or HTTPS'
+        isValid = false
+      }
+    } catch {
+      validationErrors.value.url = 'Please enter a valid URL'
+      isValid = false
+    }
+  }
+
+  // Interval validation
+  if (newMonitor.value.interval < 30 || newMonitor.value.interval > 3600) {
+    validationErrors.value.interval = 'Interval must be between 30 and 3600 seconds'
+    isValid = false
+  }
+
+  return isValid
 }
 
 const addMonitor = async () => {
+  if (!validateForm()) {
+    return
+  }
+
   try {
-    await axios.post('/api/monitors', newMonitor.value)
-    showAddForm.value = false
+    submitting.value = true
+    await apiService.createMonitor(newMonitor.value)
+
+    // Reset form and close modal
     newMonitor.value = { name: '', url: '', type: 'http', interval: 60 }
-    fetchMonitors()
+    showAddForm.value = false
+    validationErrors.value = {}
+
+    // Refresh monitors list
+    await fetchMonitors()
   } catch (error) {
-    console.error('Failed to add monitor:', error)
+    console.error('Error creating monitor:', error)
+    if (error.message.includes('already exists')) {
+      validationErrors.value.name = error.message
+    } else {
+      alert(`Failed to create monitor: ${error.message}`)
+    }
+  } finally {
+    submitting.value = false
   }
 }
 
-const deleteMonitor = async (id: number) => {
-  if (confirm('Are you sure you want to delete this monitor?')) {
-    try {
-      // await axios.delete(`/api/monitors/${id}`)
-      // For now, just remove from local state
-      monitors.value = monitors.value.filter(m => m.id !== id)
-    } catch (error) {
-      console.error('Failed to delete monitor:', error)
-    }
+const cancelAdd = () => {
+  showAddForm.value = false
+  newMonitor.value = { name: '', url: '', type: 'http', interval: 60 }
+  validationErrors.value = {}
+}
+
+const confirmDelete = (monitor) => {
+  deleteTarget.value = monitor
+}
+
+const deleteMonitor = async () => {
+  if (!deleteTarget.value) return
+
+  try {
+    deleting.value = true
+    await apiService.deleteMonitor(deleteTarget.value.id)
+
+    // Refresh monitors list
+    await fetchMonitors()
+    deleteTarget.value = null
+  } catch (error) {
+    console.error('Error deleting monitor:', error)
+    alert(`Failed to delete monitor: ${error.message}`)
+  } finally {
+    deleting.value = false
   }
+}
+
+const checkMonitor = async (monitorId) => {
+  try {
+    await apiService.checkMonitor(monitorId)
+    // Refresh data after check
+    setTimeout(fetchMonitors, 1000)
+  } catch (error) {
+    console.error(`Error checking monitor ${monitorId}:`, error)
+    alert(`Failed to check monitor: ${error.message}`)
+  }
+}
+
+const getMonitorStatus = (monitor) => {
+  // For now, show 'unknown' status since we're not fetching real-time status
+  // In a full implementation, you'd fetch the latest check result
+  return 'unknown'
+}
+
+const getMonitorStatusText = (monitor) => {
+  return 'Unknown'
+}
+
+const retryConnection = () => {
+  fetchMonitors()
 }
 
 onMounted(() => {
@@ -185,6 +338,11 @@ onMounted(() => {
   background: #2980b9;
 }
 
+.btn-primary:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
 .btn-secondary {
   background: #95a5a6;
   color: white;
@@ -211,6 +369,39 @@ onMounted(() => {
 
 .btn-danger:hover {
   background: #c0392b;
+}
+
+.btn-danger:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+.btn-small:hover {
+  opacity: 0.8;
+}
+
+.connection-error {
+  background: #fee;
+  border: 1px solid #fcc;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
 }
 
 .modal-overlay {
@@ -259,6 +450,15 @@ onMounted(() => {
   font-size: 1rem;
 }
 
+.form-group input.error {
+  border-color: #e74c3c;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.85rem;
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -294,6 +494,16 @@ onMounted(() => {
   background: #f8f9fa;
 }
 
+.no-monitors {
+  text-align: center;
+  padding: 3rem;
+  color: #7f8c8d;
+}
+
+.no-monitors p {
+  margin-bottom: 1rem;
+}
+
 .status-badge {
   padding: 0.25rem 0.5rem;
   border-radius: 12px;
@@ -310,5 +520,16 @@ onMounted(() => {
 .status-badge.down {
   background: #e74c3c;
   color: white;
+}
+
+.status-badge.unknown {
+  background: #95a5a6;
+  color: white;
+}
+
+.warning {
+  color: #f39c12;
+  font-weight: 500;
+  margin: 1rem 0;
 }
 </style>

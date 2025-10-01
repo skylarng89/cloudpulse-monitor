@@ -1,5 +1,5 @@
 {
-  "name": "infra-uptime-backend",
+  "name": "cloudpulse-monitor-backend",
   "version": "1.0.0",
   "description": "Fast and simple uptime monitoring tool backend",
   "main": "src/app.js",
