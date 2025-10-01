@@ -1,5 +1,3 @@
-const { MonitoringService } = require('../services');
-
 // Monitoring and status routes
 async function monitoringRoutes(fastify, options) {
   const { monitoringService } = options;

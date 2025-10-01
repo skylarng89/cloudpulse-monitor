@@ -1,5 +1,3 @@
-const { SchedulerService } = require('../services');
-
 // Scheduler management routes
 async function schedulerRoutes(fastify, options) {
   const { schedulerService } = options;
