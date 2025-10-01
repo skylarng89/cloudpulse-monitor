@@ -1,38 +1,48 @@
-const { Monitor, MonitorCheck } = require('../models');
+const { Monitor } = require('../models/Monitor');
+const { MonitorCheck } = require('../models/MonitorCheck');
 
-/**
- * Monitor Service Class
- * Handles business logic for monitor operations
- */
 class MonitorService {
   constructor(db) {
     this.db = db;
   }
 
   /**
+   * Validates monitor data
+   * @param {Object} monitorData - Monitor configuration
+   * @throws {Error} If validation fails
+   */
+  validateMonitorData(monitorData) {
+    if (!monitorData.name || typeof monitorData.name !== 'string') {
+      throw new Error('Monitor name is required and must be a string');
+    }
+    if (!monitorData.url || typeof monitorData.url !== 'string') {
+      throw new Error('Monitor URL is required and must be a string');
+    }
+    if (!monitorData.type || !['http', 'https', 'ping', 'tcp'].includes(monitorData.type)) {
+      throw new Error('Monitor type must be http, https, ping, or tcp');
+    }
+  }
+
+  /**
    * Creates a new monitor
-   * @param {Object} monitorData - Monitor data
-   * @returns {Object} Created monitor with ID
+   * @param {Object} monitorData - Monitor configuration
+   * @returns {Monitor} Created monitor
    */
   async createMonitor(monitorData) {
     try {
-      // Validate and create monitor instance
-      const monitor = new Monitor(monitorData);
+      // Validate monitor data
+      this.validateMonitorData(monitorData);
 
       // Check for duplicate names
-      const existingMonitor = this.findMonitorByName(monitor.name);
+      const existingMonitor = this.findMonitorByName(monitorData.name);
       if (existingMonitor) {
-        throw new Error(`Monitor with name "${monitor.name}" already exists`);
+        throw new Error(`Monitor with name "${monitorData.name}" already exists`);
       }
 
-      // Save to database
-      const id = monitor.save(this.db);
+      // Create monitor in database using static method
+      const monitor = Monitor.create(this.db, monitorData);
 
-      return {
-        id,
-        ...monitor,
-        created_at: monitor.created_at
-      };
+      return monitor;
     } catch (error) {
       throw new Error(`Failed to create monitor: ${error.message}`);
     }
@@ -51,227 +61,112 @@ class MonitorService {
   }
 
   /**
-   * Gets monitors by type
-   * @param {string} type - Monitor type (http, ping, tcp)
-   * @returns {Monitor[]} Array of monitors
-   */
-  async getMonitorsByType(type) {
-    try {
-      const validTypes = ['http', 'ping', 'tcp'];
-      if (!validTypes.includes(type)) {
-        throw new Error(`Invalid monitor type. Must be one of: ${validTypes.join(', ')}`);
-      }
-
-      return Monitor.findByType(this.db, type);
-    } catch (error) {
-      throw new Error(`Failed to retrieve monitors by type: ${error.message}`);
-    }
-  }
-
-  /**
-   * Gets a specific monitor by ID
+   * Gets a monitor by ID
    * @param {number} id - Monitor ID
-   * @returns {Monitor|null} Monitor instance or null
+   * @returns {Monitor|null} Monitor or null if not found
    */
   async getMonitorById(id) {
     try {
-      if (!id || typeof id !== 'number') {
-        throw new Error('Valid monitor ID is required');
-      }
-
       return Monitor.findById(this.db, id);
     } catch (error) {
-      throw new Error(`Failed to retrieve monitor: ${error.message}`);
+      throw new Error(`Failed to retrieve monitor ${id}: ${error.message}`);
     }
   }
 
   /**
    * Updates an existing monitor
    * @param {number} id - Monitor ID
-   * @param {Object} updateData - Data to update
-   * @returns {boolean} Success status
+   * @param {Object} monitorData - Updated monitor data
+   * @returns {Monitor} Updated monitor
    */
-  async updateMonitor(id, updateData) {
+  async updateMonitor(id, monitorData) {
     try {
-      if (!id || typeof id !== 'number') {
-        throw new Error('Valid monitor ID is required');
+      // Validate monitor data if provided
+      if (monitorData.name || monitorData.url || monitorData.type) {
+        this.validateMonitorData({...monitorData, id});
       }
 
-      // Get existing monitor
-      const existingMonitor = Monitor.findById(this.db, id);
-      if (!existingMonitor) {
-        throw new Error('Monitor not found');
-      }
-
-      // Check for name conflicts if name is being updated
-      if (updateData.name && updateData.name !== existingMonitor.name) {
-        const duplicateMonitor = this.findMonitorByName(updateData.name);
-        if (duplicateMonitor) {
-          throw new Error(`Monitor with name "${updateData.name}" already exists`);
-        }
-      }
-
-      // Update monitor properties
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] !== undefined) {
-          existingMonitor[key] = updateData[key];
-        }
-      });
-
-      // Validate updated data
-      existingMonitor.validate();
-
-      // Save to database
-      return existingMonitor.update(this.db);
+      const monitor = Monitor.update(this.db, id, monitorData);
+      return monitor;
     } catch (error) {
-      throw new Error(`Failed to update monitor: ${error.message}`);
+      throw new Error(`Failed to update monitor ${id}: ${error.message}`);
     }
   }
 
   /**
-   * Deletes a monitor (soft delete)
+   * Deletes a monitor
    * @param {number} id - Monitor ID
-   * @returns {boolean} Success status
    */
   async deleteMonitor(id) {
     try {
-      if (!id || typeof id !== 'number') {
-        throw new Error('Valid monitor ID is required');
-      }
-
-      const monitor = Monitor.findById(this.db, id);
-      if (!monitor) {
-        throw new Error('Monitor not found');
-      }
-
-      return monitor.delete(this.db);
+      Monitor.delete(this.db, id);
     } catch (error) {
-      throw new Error(`Failed to delete monitor: ${error.message}`);
+      throw new Error(`Failed to delete monitor ${id}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Finds a monitor by name
+   * @param {string} name - Monitor name
+   * @returns {Monitor|null} Monitor or null if not found
+   */
+  findMonitorByName(name) {
+    try {
+      const monitors = Monitor.findAll(this.db);
+      return monitors.find(monitor => monitor.name === name) || null;
+    } catch (error) {
+      throw new Error(`Failed to find monitor by name ${name}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Gets monitors by type
+   * @param {string} type - Monitor type
+   * @returns {Monitor[]} Array of monitors
+   */
+  getMonitorsByType(type) {
+    try {
+      return Monitor.findByType(this.db, type);
+    } catch (error) {
+      throw new Error(`Failed to find monitors by type ${type}: ${error.message}`);
     }
   }
 
   /**
    * Gets monitor statistics
-   * @returns {Object} Statistics object
+   * @param {number} id - Monitor ID
+   * @returns {Object} Monitor statistics
    */
-  async getMonitorStats() {
+  async getMonitorStats(id) {
     try {
-      return Monitor.getStats(this.db);
+      return Monitor.getStats(this.db, id);
     } catch (error) {
-      throw new Error(`Failed to retrieve monitor statistics: ${error.message}`);
+      throw new Error(`Failed to get stats for monitor ${id}: ${error.message}`);
     }
   }
 
   /**
-   * Gets recent check results for a monitor
-   * @param {number} monitorId - Monitor ID
-   * @param {number} limit - Maximum results (default: 50)
-   * @returns {MonitorCheck[]} Array of check results
+   * Gets monitors that need to be checked
+   * @param {number} maxChecks - Maximum monitors to return
+   * @returns {Monitor[]} Array of monitors needing checks
    */
-  async getMonitorChecks(monitorId, limit = 50) {
+  getMonitorsNeedingChecks(maxChecks = 100) {
     try {
-      if (!monitorId || typeof monitorId !== 'number') {
-        throw new Error('Valid monitor ID is required');
-      }
-
-      // Verify monitor exists
-      const monitor = Monitor.findById(this.db, monitorId);
-      if (!monitor) {
-        throw new Error('Monitor not found');
-      }
-
-      return MonitorCheck.findByMonitorId(this.db, monitorId, limit);
-    } catch (error) {
-      throw new Error(`Failed to retrieve monitor checks: ${error.message}`);
-    }
-  }
-
-  /**
-   * Gets check statistics for a monitor
-   * @param {number} monitorId - Monitor ID
-   * @param {number} hours - Hours to look back (default: 24)
-   * @returns {Object} Check statistics
-   */
-  async getMonitorCheckStats(monitorId, hours = 24) {
-    try {
-      if (!monitorId || typeof monitorId !== 'number') {
-        throw new Error('Valid monitor ID is required');
-      }
-
-      // Verify monitor exists
-      const monitor = Monitor.findById(this.db, monitorId);
-      if (!monitor) {
-        throw new Error('Monitor not found');
-      }
-
-      return MonitorCheck.getStatsForMonitor(this.db, monitorId, hours);
-    } catch (error) {
-      throw new Error(`Failed to retrieve monitor check statistics: ${error.message}`);
-    }
-  }
-
-  /**
-   * Gets system-wide check statistics
-   * @param {number} hours - Hours to look back (default: 24)
-   * @returns {Object} System statistics
-   */
-  async getSystemCheckStats(hours = 24) {
-    try {
-      return MonitorCheck.getSystemStats(this.db, hours);
-    } catch (error) {
-      throw new Error(`Failed to retrieve system check statistics: ${error.message}`);
-    }
-  }
-
-  /**
-   * Cleans up old check records
-   * @param {number} days - Days to keep (default: 30)
-   * @returns {number} Number of records deleted
-   */
-  async cleanupOldCheckRecords(days = 30) {
-    try {
-      return MonitorCheck.cleanupOldRecords(this.db, days);
-    } catch (error) {
-      throw new Error(`Failed to cleanup old records: ${error.message}`);
-    }
-  }
-
-  /**
-   * Validates monitor data (without creating instance)
-   * @param {Object} monitorData - Monitor data to validate
-   * @returns {boolean} True if valid
-   * @throws {Error} If validation fails
-   */
-  validateMonitorData(monitorData) {
-    try {
-      const monitor = new Monitor(monitorData);
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Finds a monitor by name (internal method)
-   * @param {string} name - Monitor name
-   * @returns {Monitor|null} Monitor instance or null
-   */
-  findMonitorByName(name) {
-    try {
-      // This is a simple implementation - in production you might want a direct query
       const monitors = Monitor.findAll(this.db);
-      return monitors.find(monitor => monitor.name.toLowerCase() === name.toLowerCase());
+      // For now, return all active monitors
+      // In a real implementation, you'd check last check time vs interval
+      return monitors.slice(0, maxChecks);
     } catch (error) {
-      return null;
+      throw new Error(`Failed to get monitors needing checks: ${error.message}`);
     }
   }
 
   /**
-   * Bulk creates multiple monitors
+   * Creates multiple monitors in batch
    * @param {Array} monitorsData - Array of monitor data objects
-   * @returns {Array} Array of created monitor objects
+   * @returns {Object} Batch operation results
    */
-  async bulkCreateMonitors(monitorsData) {
+  async createMonitorsBatch(monitorsData) {
     const results = [];
     const errors = [];
 
@@ -293,22 +188,6 @@ class MonitorService {
       totalCreated: results.length,
       totalErrors: errors.length
     };
-  }
-
-  /**
-   * Gets monitors that need to be checked (based on interval)
-   * @param {number} maxChecks - Maximum monitors to return (default: 100)
-   * @returns {Monitor[]} Array of monitors ready for checking
-   */
-  async getMonitorsForChecking(maxChecks = 100) {
-    try {
-      // This is a simplified implementation
-      // In production, you'd want to check the last check time vs interval
-      const monitors = Monitor.findAll(this.db);
-      return monitors.slice(0, maxChecks);
-    } catch (error) {
-      throw new Error(`Failed to get monitors for checking: ${error.message}`);
-    }
   }
 }
 
