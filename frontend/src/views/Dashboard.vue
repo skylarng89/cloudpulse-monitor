@@ -1,175 +1,266 @@
 <template>
-  <div class="dashboard">
+  <div class="space-y-6">
     <!-- Page Header -->
-    <div class="page-header">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="page-title">
-          <i class="ti ti-dashboard"></i>
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <i class="ti ti-dashboard text-purple-600 text-4xl"></i>
           Dashboard
         </h1>
-        <p class="page-subtitle">Monitor your services in real-time</p>
+        <p class="mt-1 text-sm text-gray-600">Monitor your services in real-time</p>
       </div>
-      <div class="header-actions">
-        <button @click="refreshData" :disabled="loading" class="btn btn-secondary">
-          <i class="ti ti-refresh" :class="{ 'spinning': loading }"></i>
+      <div class="flex items-center gap-3">
+        <button 
+          @click="refreshData" 
+          :disabled="loading"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+        >
+          <i class="ti ti-refresh" :class="{ 'animate-spin': loading }"></i>
           <span>Refresh</span>
         </button>
-        <button @click="triggerManualCheck" class="btn btn-primary">
+        <button 
+          @click="triggerManualCheck"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-sm"
+        >
           <i class="ti ti-player-play"></i>
           <span>Check All</span>
         </button>
       </div>
     </div>
 
-    <!-- Connection Error -->
-    <div v-if="connectionError" class="alert alert-danger">
-      <i class="ti ti-alert-circle"></i>
-      <div>
-        <strong>Connection Error</strong>
-        <p>{{ connectionError }}</p>
+    <!-- Connection Error Alert -->
+    <div v-if="connectionError" class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
+      <div class="flex items-start">
+        <i class="ti ti-alert-circle text-red-400 text-xl flex-shrink-0"></i>
+        <div class="ml-3 flex-1">
+          <h3 class="text-sm font-medium text-red-800">Connection Error</h3>
+          <p class="mt-1 text-sm text-red-700">{{ connectionError }}</p>
+        </div>
+        <button 
+          @click="retryConnection"
+          class="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-sm font-medium rounded-md transition-colors"
+        >
+          <i class="ti ti-refresh text-sm"></i>
+          Retry
+        </button>
       </div>
-      <button @click="retryConnection" class="btn btn-secondary btn-small">
-        <i class="ti ti-refresh"></i>
-        Retry
-      </button>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading && !connectionError" class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading dashboard data...</p>
+    <div v-if="loading && !connectionError" class="flex flex-col items-center justify-center py-12">
+      <div class="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+      <p class="mt-4 text-sm text-gray-600">Loading dashboard data...</p>
     </div>
 
     <!-- Main Dashboard Content -->
-    <div v-if="!loading && !connectionError" class="dashboard-content">
-      <!-- Statistics Cards -->
-      <div class="stats-grid">
-        <div class="stat-card stat-primary">
-          <div class="stat-icon">
-            <i class="ti ti-server-2"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Total Monitors</div>
-            <div class="stat-value">{{ stats.totalMonitors || 0 }}</div>
-          </div>
-        </div>
-
-        <div class="stat-card stat-success">
-          <div class="stat-icon">
-            <i class="ti ti-circle-check"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Active</div>
-            <div class="stat-value">{{ stats.activeCount || 0 }}</div>
-          </div>
-        </div>
-
-        <div class="stat-card stat-danger">
-          <div class="stat-icon">
-            <i class="ti ti-alert-triangle"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">Down</div>
-            <div class="stat-value">{{ stats.downCount || 0 }}</div>
+    <div v-if="!loading && !connectionError" class="space-y-6">
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Total Monitors -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-purple-500 hover:shadow-md transition-shadow duration-200">
+          <div class="p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
+                  <i class="ti ti-server-2 text-white text-2xl"></i>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Total Monitors</dt>
+                  <dd class="text-3xl font-bold text-gray-900">{{ stats.totalMonitors || 0 }}</dd>
+                </dl>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="stat-card stat-info">
-          <div class="stat-icon">
-            <i class="ti ti-clock"></i>
+        <!-- Active -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-green-500 hover:shadow-md transition-shadow duration-200">
+          <div class="p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                  <i class="ti ti-circle-check text-white text-2xl"></i>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Active</dt>
+                  <dd class="text-3xl font-bold text-green-600">{{ stats.activeCount || 0 }}</dd>
+                </dl>
+              </div>
+            </div>
           </div>
-          <div class="stat-content">
-            <div class="stat-label">Avg Response</div>
-            <div class="stat-value">{{ stats.avgResponseTime ? `${stats.avgResponseTime}ms` : 'N/A' }}</div>
+        </div>
+
+        <!-- Down -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-red-500 hover:shadow-md transition-shadow duration-200">
+          <div class="p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-lg">
+                  <i class="ti ti-alert-triangle text-white text-2xl"></i>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Down</dt>
+                  <dd class="text-3xl font-bold text-red-600">{{ stats.downCount || 0 }}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Avg Response -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-blue-500 hover:shadow-md transition-shadow duration-200">
+          <div class="p-5">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                  <i class="ti ti-clock text-white text-2xl"></i>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Avg Response</dt>
+                  <dd class="text-3xl font-bold text-gray-900">{{ stats.avgResponseTime ? `${stats.avgResponseTime}ms` : 'N/A' }}</dd>
+                </dl>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Scheduler Status -->
-      <div class="scheduler-card" v-if="schedulerStatus">
-        <div class="scheduler-header">
-          <div class="scheduler-title">
-            <i class="ti ti-robot"></i>
-            <h3>Scheduler Status</h3>
+      <div v-if="schedulerStatus" class="bg-white shadow-sm rounded-lg border border-gray-200">
+        <div class="px-6 py-5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <i class="ti ti-robot text-purple-600 text-2xl"></i>
+              <h3 class="text-lg font-medium text-gray-900">Scheduler Status</h3>
+            </div>
+            <span 
+              class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
+              :class="schedulerStatus.isRunning ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+            >
+              <i class="ti" :class="schedulerStatus.isRunning ? 'ti-circle-check' : 'ti-circle-x'"></i>
+              {{ schedulerStatus.isRunning ? 'Running' : 'Stopped' }}
+            </span>
           </div>
-          <div class="scheduler-badge" :class="{ active: schedulerStatus.isRunning }">
-            <i class="ti" :class="schedulerStatus.isRunning ? 'ti-circle-check' : 'ti-circle-x'"></i>
-            {{ schedulerStatus.isRunning ? 'Running' : 'Stopped' }}
-          </div>
-        </div>
-        <div class="scheduler-stats">
-          <div class="scheduler-stat">
-            <i class="ti ti-clock-hour-3"></i>
-            <span>Last Run: {{ formatTime(schedulerStatus.stats?.lastRun) || 'Never' }}</span>
-          </div>
-          <div class="scheduler-stat">
-            <i class="ti ti-check"></i>
-            <span>Total Checks: {{ schedulerStatus.stats?.totalChecks || 0 }}</span>
+          <div class="mt-4 flex flex-wrap gap-6 text-sm text-gray-600">
+            <div class="flex items-center gap-2">
+              <i class="ti ti-clock-hour-3 text-gray-400"></i>
+              <span>Last Run: {{ formatTime(schedulerStatus.stats?.lastRun) || 'Never' }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="ti ti-check text-gray-400"></i>
+              <span>Total Checks: {{ schedulerStatus.stats?.totalChecks || 0 }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Monitor Status Grid -->
-      <div class="monitors-section">
-        <div class="section-header">
-          <h2>
-            <i class="ti ti-activity"></i>
+      <!-- Monitor Status -->
+      <div class="bg-white shadow-sm rounded-lg border border-gray-200">
+        <div class="px-6 py-5 border-b border-gray-200">
+          <h2 class="text-lg font-medium text-gray-900 flex items-center gap-2">
+            <i class="ti ti-activity text-purple-600"></i>
             Monitor Status
           </h2>
         </div>
 
-        <div v-if="monitors.length === 0" class="empty-state">
-          <i class="ti ti-server-off"></i>
-          <h3>No monitors configured</h3>
-          <p>Get started by adding your first monitor</p>
-          <router-link to="/monitors" class="btn btn-primary">
+        <!-- Empty State -->
+        <div v-if="monitors.length === 0" class="px-6 py-12 text-center">
+          <i class="ti ti-server-off text-gray-300 text-6xl"></i>
+          <h3 class="mt-4 text-lg font-medium text-gray-900">No monitors configured</h3>
+          <p class="mt-2 text-sm text-gray-600">Get started by adding your first monitor</p>
+          <router-link 
+            to="/monitors"
+            class="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
+          >
             <i class="ti ti-plus"></i>
             Add Your First Monitor
           </router-link>
         </div>
 
-        <div v-else class="monitors-grid">
-          <div
-            v-for="monitor in monitors"
-            :key="monitor.id"
-            class="monitor-card"
-            :class="getMonitorClass(monitor.status)"
-          >
-            <div class="monitor-header">
-              <div class="monitor-title">
-                <i class="ti" :class="getMonitorIcon(monitor.status)"></i>
-                <h3>{{ monitor.name }}</h3>
+        <!-- Monitors Grid -->
+        <div v-else class="p-6">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              v-for="monitor in monitors"
+              :key="monitor.id"
+              class="relative bg-white border rounded-lg p-5 hover:shadow-md transition-all duration-200"
+              :class="{
+                'border-l-4 border-l-green-500 bg-green-50/30': monitor.status === 'up',
+                'border-l-4 border-l-red-500 bg-red-50/30': monitor.status === 'down',
+                'border-l-4 border-l-yellow-500 bg-yellow-50/30': monitor.status === 'error',
+                'border-gray-200': !monitor.status || monitor.status === 'unknown'
+              }"
+            >
+              <!-- Monitor Header -->
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <i 
+                    class="ti text-xl"
+                    :class="{
+                      'ti-circle-check text-green-600': monitor.status === 'up',
+                      'ti-circle-x text-red-600': monitor.status === 'down',
+                      'ti-alert-triangle text-yellow-600': monitor.status === 'error',
+                      'ti-help-circle text-gray-400': !monitor.status || monitor.status === 'unknown'
+                    }"
+                  ></i>
+                  <h3 class="text-base font-semibold text-gray-900">{{ monitor.name }}</h3>
+                </div>
+                <span 
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase"
+                  :class="{
+                    'bg-green-100 text-green-800': monitor.status === 'up',
+                    'bg-red-100 text-red-800': monitor.status === 'down',
+                    'bg-yellow-100 text-yellow-800': monitor.status === 'error',
+                    'bg-gray-100 text-gray-800': !monitor.status || monitor.status === 'unknown'
+                  }"
+                >
+                  {{ monitor.status || 'unknown' }}
+                </span>
               </div>
-              <span class="status-badge" :class="monitor.status">
-                {{ monitor.status || 'unknown' }}
-              </span>
-            </div>
-            
-            <div class="monitor-url">
-              <i class="ti ti-link"></i>
-              <span>{{ monitor.url }}</span>
-            </div>
-            
-            <div class="monitor-details">
-              <div class="monitor-detail" v-if="monitor.responseTime">
-                <i class="ti ti-clock"></i>
-                <span>{{ monitor.responseTime }}ms</span>
+
+              <!-- URL -->
+              <div class="flex items-center gap-2 mb-3 text-sm text-gray-600">
+                <i class="ti ti-link text-gray-400 flex-shrink-0"></i>
+                <span class="truncate font-mono text-xs">{{ monitor.url }}</span>
               </div>
-              <div class="monitor-detail">
-                <i class="ti ti-calendar-time"></i>
-                <span>{{ formatTime(monitor.lastCheck) }}</span>
+
+              <!-- Details -->
+              <div class="flex items-center gap-4 mb-4 text-sm text-gray-600">
+                <div v-if="monitor.responseTime" class="flex items-center gap-1">
+                  <i class="ti ti-clock text-gray-400"></i>
+                  <span>{{ monitor.responseTime }}ms</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <i class="ti ti-calendar-time text-gray-400"></i>
+                  <span>{{ formatTime(monitor.lastCheck) }}</span>
+                </div>
               </div>
-            </div>
-            
-            <div class="monitor-actions">
-              <button @click="checkMonitor(monitor.id)" class="btn btn-small btn-primary">
-                <i class="ti ti-refresh"></i>
-                Check Now
-              </button>
-              <router-link :to="`/monitors/${monitor.id}`" class="btn btn-small btn-secondary">
-                <i class="ti ti-eye"></i>
-                Details
-              </router-link>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-2">
+                <button 
+                  @click="checkMonitor(monitor.id)"
+                  class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                >
+                  <i class="ti ti-refresh text-sm"></i>
+                  Check Now
+                </button>
+                <router-link 
+                  :to="`/monitors/${monitor.id}`"
+                  class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                >
+                  <i class="ti ti-eye text-sm"></i>
+                  Details
+                </router-link>
+              </div>
             </div>
           </div>
         </div>
@@ -217,16 +308,12 @@ const fetchDashboardData = async () => {
     loading.value = true
     connectionError.value = ''
 
-    // Fetch monitors and their latest status
     const monitorsData = await apiService.getMonitors()
-
-    // Get recent check results for each monitor
     const monitorsWithStatus = await Promise.all(
       monitorsData.map(async (monitor: Monitor) => {
         try {
           const checks = await apiService.getMonitorChecks(monitor.id, { limit: 1 })
           const latestCheck = checks[0]
-
           return {
             ...monitor,
             status: latestCheck?.status || 'unknown',
@@ -234,7 +321,6 @@ const fetchDashboardData = async () => {
             lastCheck: latestCheck?.checked_at
           }
         } catch (error) {
-          console.error(`Error fetching status for monitor ${monitor.id}:`, error)
           return {
             ...monitor,
             status: 'error',
@@ -246,8 +332,6 @@ const fetchDashboardData = async () => {
     )
 
     monitors.value = monitorsWithStatus
-
-    // Calculate statistics
     stats.value = {
       totalMonitors: monitorsData.length,
       activeCount: monitorsWithStatus.filter((m: any) => m.status === 'up').length,
@@ -260,16 +344,12 @@ const fetchDashboardData = async () => {
       )
     }
 
-    // Fetch scheduler status
     try {
       schedulerStatus.value = await apiService.getSchedulerStatus()
     } catch (error) {
-      console.warn('Could not fetch scheduler status:', error)
       schedulerStatus.value = null
     }
-
   } catch (error: any) {
-    console.error('Error fetching dashboard data:', error)
     connectionError.value = error.message || 'Failed to connect to backend'
   } finally {
     loading.value = false
@@ -288,10 +368,8 @@ const formatTime = (dateString: string | null) => {
 const checkMonitor = async (monitorId: number) => {
   try {
     await apiService.checkMonitor(monitorId)
-    // Refresh data after a brief delay to show updated status
     setTimeout(fetchDashboardData, 1000)
   } catch (error: any) {
-    console.error(`Error checking monitor ${monitorId}:`, error)
     alert(`Failed to check monitor: ${error.message}`)
   }
 }
@@ -300,10 +378,8 @@ const triggerManualCheck = async () => {
   try {
     loading.value = true
     await apiService.triggerManualCheck()
-    // Refresh data to show updated results
     setTimeout(fetchDashboardData, 2000)
   } catch (error: any) {
-    console.error('Error triggering manual check:', error)
     alert(`Failed to trigger manual check: ${error.message}`)
   }
 }
@@ -316,24 +392,6 @@ const retryConnection = () => {
   fetchDashboardData()
 }
 
-const getMonitorClass = (status: string) => {
-  return `monitor-${status || 'unknown'}`
-}
-
-const getMonitorIcon = (status: string) => {
-  switch (status) {
-    case 'up':
-      return 'ti-circle-check'
-    case 'down':
-      return 'ti-circle-x'
-    case 'error':
-      return 'ti-alert-triangle'
-    default:
-      return 'ti-help-circle'
-  }
-}
-
-// Auto-refresh every 30 seconds
 onMounted(() => {
   fetchDashboardData()
   refreshInterval = setInterval(fetchDashboardData, 30000)
@@ -345,480 +403,3 @@ onUnmounted(() => {
   }
 })
 </script>
-
-<style scoped>
-.dashboard {
-  animation: fadeIn 0.5s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Page Header */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--gray-900);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0;
-}
-
-.page-title .ti {
-  color: var(--primary);
-  font-size: 2.5rem;
-}
-
-.page-subtitle {
-  color: var(--gray-600);
-  margin-top: 0.25rem;
-  font-size: 0.9375rem;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-/* Alert */
-.alert {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius-lg);
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow);
-}
-
-.alert-danger {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  border-left: 4px solid var(--danger);
-  color: var(--gray-900);
-}
-
-.alert .ti {
-  font-size: 1.5rem;
-  color: var(--danger);
-}
-
-.alert strong {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.alert p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--gray-700);
-}
-
-/* Loading State */
-.loading-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--gray-600);
-}
-
-.spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid var(--gray-200);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spinning {
-  animation: spin 0.8s linear infinite;
-}
-
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: white;
-  padding: 1.75rem;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  transition: all 0.3s ease;
-  border-left: 4px solid;
-  min-height: 130px;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
-}
-
-.stat-primary {
-  border-left-color: var(--primary);
-  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
-}
-
-.stat-success {
-  border-left-color: var(--success);
-  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-}
-
-.stat-danger {
-  border-left-color: var(--danger);
-  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
-}
-
-.stat-info {
-  border-left-color: var(--info);
-  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
-}
-
-.stat-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.stat-primary .stat-icon {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: white;
-}
-
-.stat-success .stat-icon {
-  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-  color: white;
-}
-
-.stat-danger .stat-icon {
-  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
-  color: white;
-}
-
-.stat-info .stat-icon {
-  background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
-  color: white;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: var(--gray-600);
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--gray-900);
-  line-height: 1;
-}
-
-/* Scheduler Card */
-.scheduler-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
-}
-
-.scheduler-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.scheduler-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.scheduler-title .ti {
-  font-size: 1.5rem;
-  color: var(--primary);
-}
-
-.scheduler-title h3 {
-  margin: 0;
-  font-size: 1.125rem;
-  color: var(--gray-900);
-}
-
-.scheduler-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius);
-  font-size: 0.875rem;
-  font-weight: 600;
-  background: var(--gray-100);
-  color: var(--gray-700);
-}
-
-.scheduler-badge.active {
-  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-  color: white;
-}
-
-.scheduler-stats {
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-
-.scheduler-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--gray-600);
-  font-size: 0.875rem;
-}
-
-.scheduler-stat .ti {
-  color: var(--primary);
-}
-
-/* Monitors Section */
-.monitors-section {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-}
-
-.section-header {
-  margin-bottom: 1.5rem;
-}
-
-.section-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: var(--gray-900);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.section-header h2 .ti {
-  color: var(--primary);
-}
-
-/* Empty State */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-}
-
-.empty-state .ti {
-  font-size: 4rem;
-  color: var(--gray-300);
-  margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-  font-size: 1.5rem;
-  color: var(--gray-900);
-  margin-bottom: 0.5rem;
-}
-
-.empty-state p {
-  color: var(--gray-600);
-  margin-bottom: 1.5rem;
-}
-
-/* Monitors Grid */
-.monitors-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-}
-
-.monitor-card {
-  padding: 1.5rem;
-  border-radius: var(--radius-lg);
-  border-left: 4px solid var(--gray-300);
-  background: white;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.monitor-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.monitor-up {
-  border-left-color: var(--success);
-  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-}
-
-.monitor-down {
-  border-left-color: var(--danger);
-  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
-}
-
-.monitor-error {
-  border-left-color: var(--warning);
-  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
-}
-
-.monitor-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-}
-
-.monitor-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-}
-
-.monitor-title .ti {
-  font-size: 1.5rem;
-}
-
-.monitor-up .monitor-title .ti {
-  color: var(--success);
-}
-
-.monitor-down .monitor-title .ti {
-  color: var(--danger);
-}
-
-.monitor-error .monitor-title .ti {
-  color: var(--warning);
-}
-
-.monitor-title h3 {
-  margin: 0;
-  font-size: 1.125rem;
-  color: var(--gray-900);
-  font-weight: 600;
-}
-
-.status-badge {
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.status-badge.up {
-  background: var(--success);
-  color: white;
-}
-
-.status-badge.down {
-  background: var(--danger);
-  color: white;
-}
-
-.status-badge.error {
-  background: var(--warning);
-  color: white;
-}
-
-.status-badge.unknown {
-  background: var(--gray-400);
-  color: white;
-}
-
-.monitor-url {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--gray-600);
-  margin-bottom: 1rem;
-  font-family: 'Courier New', monospace;
-  font-size: 0.875rem;
-  word-break: break-all;
-}
-
-.monitor-url .ti {
-  flex-shrink: 0;
-  color: var(--gray-400);
-}
-
-.monitor-details {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.monitor-detail {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--gray-600);
-}
-
-.monitor-detail .ti {
-  color: var(--gray-400);
-}
-
-.monitor-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .monitors-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

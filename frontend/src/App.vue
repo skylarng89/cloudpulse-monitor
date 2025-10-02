@@ -1,30 +1,53 @@
 <template>
-  <div id="app">
-    <header class="app-header">
-      <div class="header-container">
-        <div class="logo">
-          <i class="ti ti-activity"></i>
-          <span class="logo-text">CloudPulse</span>
-          <span class="logo-badge">Monitor</span>
+  <div id="app" class="min-h-screen bg-gray-50">
+    <!-- Header with Tailwind -->
+    <header class="sticky top-0 z-50 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 shadow-lg backdrop-blur-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Logo -->
+          <div class="flex items-center gap-3">
+            <i class="ti ti-activity text-3xl text-white animate-pulse"></i>
+            <span class="text-xl font-bold text-white tracking-tight">CloudPulse</span>
+            <span class="px-3 py-1 text-xs font-semibold text-white bg-white/20 rounded-full uppercase tracking-wider">
+              Monitor
+            </span>
+          </div>
+          
+          <!-- Navigation -->
+          <nav class="flex items-center gap-2">
+            <router-link 
+              to="/" 
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
+              active-class="bg-white/25 text-white"
+            >
+              <i class="ti ti-dashboard"></i>
+              <span class="hidden sm:inline">Dashboard</span>
+            </router-link>
+            
+            <router-link 
+              to="/monitors" 
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
+              active-class="bg-white/25 text-white"
+            >
+              <i class="ti ti-server"></i>
+              <span class="hidden sm:inline">Monitors</span>
+            </router-link>
+            
+            <router-link 
+              to="/reports" 
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
+              active-class="bg-white/25 text-white"
+            >
+              <i class="ti ti-chart-line"></i>
+              <span class="hidden sm:inline">Reports</span>
+            </router-link>
+          </nav>
         </div>
-        <nav class="nav">
-          <router-link to="/" class="nav-link">
-            <i class="ti ti-dashboard"></i>
-            <span>Dashboard</span>
-          </router-link>
-          <router-link to="/monitors" class="nav-link">
-            <i class="ti ti-server"></i>
-            <span>Monitors</span>
-          </router-link>
-          <router-link to="/reports" class="nav-link">
-            <i class="ti ti-chart-line"></i>
-            <span>Reports</span>
-          </router-link>
-        </nav>
       </div>
     </header>
 
-    <main class="main-content">
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <router-view />
     </main>
   </div>
@@ -35,123 +58,13 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <style scoped>
-.app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
-}
-
-.header-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: 700;
-  font-size: 1.25rem;
-}
-
-.logo .ti {
-  font-size: 2rem;
-  animation: pulse 2s ease-in-out infinite;
-}
-
+/* Minimal custom styles - Tailwind handles most of it */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
   }
   50% {
     opacity: 0.7;
-  }
-}
-
-.logo-text {
-  letter-spacing: -0.025em;
-}
-
-.logo-badge {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.nav {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.nav-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  padding: 0.625rem 1rem;
-  border-radius: var(--radius);
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  position: relative;
-}
-
-.nav-link:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-}
-
-.nav-link.router-link-active {
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
-}
-
-.nav-link.router-link-active::after {
-  content: '';
-  position: absolute;
-  bottom: -1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40%;
-  height: 3px;
-  background: white;
-  border-radius: 9999px;
-}
-
-.main-content {
-  padding: 2rem;
-  max-width: 1280px;
-  margin: 0 auto;
-  min-height: calc(100vh - 5rem);
-}
-
-@media (max-width: 768px) {
-  .header-container {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .nav {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .nav-link span {
-    display: none;
   }
 }
 </style>
