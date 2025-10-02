@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { Monitor } = require('../models/Monitor');
+const Monitor = require('../models/Monitor');
 const HTTPMonitorService = require('./HTTPMonitorService');
 
 class SchedulerService {
@@ -45,7 +45,7 @@ class SchedulerService {
 
     try {
       for (const [monitorId, job] of this.scheduledJobs) {
-        job.destroy();
+        job.stop();
       }
       this.scheduledJobs.clear();
       this.isRunning = false;
@@ -84,6 +84,22 @@ class SchedulerService {
       console.log(`Scheduled monitor ${monitor.id} (${monitor.name}) every ${intervalSeconds} seconds`);
     } catch (error) {
       console.error(`Failed to schedule monitor ${monitor.id}:`, error);
+      throw error;
+    }
+  }
+
+  unscheduleMonitor(monitorId) {
+    try {
+      const job = this.scheduledJobs.get(monitorId);
+      if (job) {
+        job.stop();
+        this.scheduledJobs.delete(monitorId);
+        console.log(`Unscheduled monitor ${monitorId}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error(`Failed to unschedule monitor ${monitorId}:`, error);
       throw error;
     }
   }
