@@ -16,9 +16,31 @@
             Updating
           </span>
         </h1>
-        <p class="mt-1 text-sm text-gray-600">Monitor your services in real-time • Auto-refreshes every 30s</p>
+        <p class="mt-1 text-sm text-gray-600">Monitor your services in real-time • Auto-refreshes every {{ getRefreshLabel }}</p>
       </div>
       <div class="flex items-center gap-3">
+        <!-- Auto-refresh interval selector -->
+        <div class="flex items-center gap-2">
+          <label for="refresh-interval" class="text-sm font-medium text-gray-700 hidden sm:block">
+            Auto-refresh:
+          </label>
+          <div class="relative">
+            <select
+              id="refresh-interval"
+              v-model="refreshIntervalSeconds"
+              @change="updateRefreshInterval"
+              class="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-sm cursor-pointer"
+              title="Set how often the dashboard automatically refreshes data"
+            >
+              <option :value="30">Every 30s</option>
+              <option :value="60">Every 1 min</option>
+              <option :value="120">Every 2 mins</option>
+              <option :value="180">Every 3 mins</option>
+              <option :value="240">Every 4 mins</option>
+              <option :value="300">Every 5 mins</option>
+            </select>
+          </div>
+        </div>
         <button 
           @click="refreshData" 
           :disabled="loading"
@@ -299,7 +321,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import apiService from '@/services/api'
 import { format } from 'date-fns'
 
@@ -331,7 +353,30 @@ const schedulerStatus = ref<any>(null)
 const loading = ref(true)
 const isRefreshing = ref(false)
 const connectionError = ref('')
+const refreshIntervalSeconds = ref(30)
 let refreshInterval: NodeJS.Timeout | null = null
+
+// Load saved refresh interval from localStorage
+const loadRefreshInterval = () => {
+  const saved = localStorage.getItem('dashboardRefreshInterval')
+  if (saved) {
+    const parsed = parseInt(saved)
+    if ([30, 60, 120, 180, 240, 300].includes(parsed)) {
+      refreshIntervalSeconds.value = parsed
+    }
+  }
+}
+
+// Computed property for refresh label
+const getRefreshLabel = computed(() => {
+  const seconds = refreshIntervalSeconds.value
+  if (seconds < 60) {
+    return `${seconds}s`
+  } else {
+    const minutes = seconds / 60
+    return `${minutes} min${minutes > 1 ? 's' : ''}`
+  }
+})
 
 const fetchDashboardData = async (silent = false) => {
   try {
@@ -457,10 +502,32 @@ const retryConnection = () => {
   fetchDashboardData()
 }
 
+const updateRefreshInterval = () => {
+  // Save to localStorage
+  localStorage.setItem('dashboardRefreshInterval', refreshIntervalSeconds.value.toString())
+  
+  // Clear existing interval
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+  }
+  
+  // Set new interval
+  const intervalMs = refreshIntervalSeconds.value * 1000
+  refreshInterval = setInterval(() => fetchDashboardData(true), intervalMs)
+  
+  console.log(`Auto-refresh interval updated to ${refreshIntervalSeconds.value} seconds`)
+}
+
 onMounted(() => {
+  // Load saved refresh interval preference
+  loadRefreshInterval()
+  
+  // Initial data fetch
   fetchDashboardData()
-  // Auto-refresh every 30 seconds with silent mode (no loading spinner)
-  refreshInterval = setInterval(() => fetchDashboardData(true), 30000)
+  
+  // Set up auto-refresh with user's preferred interval
+  const intervalMs = refreshIntervalSeconds.value * 1000
+  refreshInterval = setInterval(() => fetchDashboardData(true), intervalMs)
 })
 
 onUnmounted(() => {

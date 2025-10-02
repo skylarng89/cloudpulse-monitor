@@ -80,6 +80,54 @@ async function monitorRoutes(fastify, options) {
       reply.code(500).send({ error: error.message });
     }
   });
+
+  // Manually check a specific monitor
+  fastify.post('/monitors/:id/check', async (request, reply) => {
+    try {
+      const { id } = request.params;
+      const monitor = monitorService.getMonitorById(parseInt(id));
+      
+      if (!monitor) {
+        return reply.code(404).send({ error: 'Monitor not found' });
+      }
+
+      // Perform the check
+      const result = await monitoringService.performCheck(monitor);
+      
+      return {
+        success: true,
+        result: result
+      };
+    } catch (error) {
+      reply.code(500).send({ error: error.message });
+    }
+  });
+
+  // Check all monitors manually
+  fastify.post('/monitors/check-all', async (request, reply) => {
+    try {
+      const monitors = monitorService.getAllMonitors();
+      
+      if (monitors.length === 0) {
+        return {
+          success: true,
+          message: 'No monitors to check',
+          results: []
+        };
+      }
+
+      // Check all monitors
+      const results = await monitoringService.checkAllMonitors(monitors);
+      
+      return {
+        success: true,
+        message: `Checked ${monitors.length} monitor(s)`,
+        results: results
+      };
+    } catch (error) {
+      reply.code(500).send({ error: error.message });
+    }
+  });
 }
 
 module.exports = monitorRoutes;
