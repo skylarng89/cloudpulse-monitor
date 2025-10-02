@@ -1,8 +1,15 @@
 <template>
   <div class="monitors-page">
-    <div class="header">
-      <h2>Monitor Management</h2>
-      <button @click="showAddForm = true" class="btn-primary">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">
+          <i class="ti ti-server"></i>
+          Monitor Management
+        </h1>
+        <p class="page-subtitle">Manage your monitoring endpoints</p>
+      </div>
+      <button @click="showAddForm = true" class="btn btn-primary">
+        <i class="ti ti-plus"></i>
         Add Monitor
       </button>
     </div>
@@ -73,10 +80,12 @@
           </div>
 
           <div class="form-actions">
-            <button type="button" @click="cancelAdd" class="btn-secondary">
+            <button type="button" @click="cancelAdd" class="btn btn-secondary">
+              <i class="ti ti-x"></i>
               Cancel
             </button>
-            <button type="submit" :disabled="submitting" class="btn-primary">
+            <button type="submit" :disabled="submitting" class="btn btn-primary">
+              <i class="ti ti-check"></i>
               {{ submitting ? 'Adding...' : 'Add Monitor' }}
             </button>
           </div>
@@ -114,12 +123,14 @@
               </span>
             </td>
             <td>
-              <button @click="checkMonitor(monitor.id)" class="btn-small" title="Check Now">
-                🔍
-              </button>
-              <button @click="confirmDelete(monitor)" class="btn-small btn-danger" title="Delete">
-                🗑️
-              </button>
+              <div class="action-buttons">
+                <button @click="checkMonitor(monitor.id)" class="btn btn-small btn-primary" title="Check Now">
+                  <i class="ti ti-refresh"></i>
+                </button>
+                <button @click="confirmDelete(monitor)" class="btn btn-small btn-danger" title="Delete">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -133,10 +144,12 @@
         <p>Are you sure you want to delete "{{ deleteTarget.name }}"?</p>
         <p class="warning">This action cannot be undone.</p>
         <div class="form-actions">
-          <button @click="deleteTarget = null" class="btn-secondary">
+          <button @click="deleteTarget = null" class="btn btn-secondary">
+            <i class="ti ti-x"></i>
             Cancel
           </button>
-          <button @click="deleteMonitor" :disabled="deleting" class="btn-danger">
+          <button @click="deleteMonitor" :disabled="deleting" class="btn btn-danger">
+            <i class="ti ti-trash"></i>
             {{ deleting ? 'Deleting...' : 'Delete Monitor' }}
           </button>
         </div>
@@ -317,76 +330,40 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.header {
+/* Page Header */
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.btn-primary {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
 }
 
-.btn-primary:hover {
-  background: #2980b9;
+.page-title .ti {
+  color: var(--primary);
+  font-size: 2.5rem;
 }
 
-.btn-primary:disabled {
-  background: #95a5a6;
-  cursor: not-allowed;
+.page-subtitle {
+  color: var(--gray-600);
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
 }
 
-.btn-secondary {
-  background: #95a5a6;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.btn-secondary:hover {
-  background: #7f8c8d;
-}
-
-.btn-danger {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.btn-danger:hover {
-  background: #c0392b;
-}
-
-.btn-danger:disabled {
-  background: #95a5a6;
-  cursor: not-allowed;
-}
-
-.btn-small {
-  padding: 0.4rem 0.8rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-right: 0.5rem;
-}
-
-.btn-small:hover {
-  opacity: 0.8;
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .connection-error {
@@ -410,20 +387,43 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal {
   background: white;
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-xl);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .monitor-form {

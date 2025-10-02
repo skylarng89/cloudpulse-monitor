@@ -468,14 +468,15 @@ onUnmounted(() => {
 
 .stat-card {
   background: white;
-  padding: 1.5rem;
+  padding: 1.75rem;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
   transition: all 0.3s ease;
   border-left: 4px solid;
+  min-height: 130px;
 }
 
 .stat-card:hover {
@@ -504,13 +505,13 @@ onUnmounted(() => {
 }
 
 .stat-icon {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  font-size: 2rem;
   flex-shrink: 0;
 }
 
