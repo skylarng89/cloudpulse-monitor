@@ -1,13 +1,42 @@
 <template>
   <div class="dashboard">
-    <!-- Connection Status -->
-    <div v-if="connectionError" class="connection-error">
-      <p>⚠️ Unable to connect to backend: {{ connectionError }}</p>
-      <button @click="retryConnection" class="btn-secondary">Retry Connection</button>
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">
+          <i class="ti ti-dashboard"></i>
+          Dashboard
+        </h1>
+        <p class="page-subtitle">Monitor your services in real-time</p>
+      </div>
+      <div class="header-actions">
+        <button @click="refreshData" :disabled="loading" class="btn btn-secondary">
+          <i class="ti ti-refresh" :class="{ 'spinning': loading }"></i>
+          <span>Refresh</span>
+        </button>
+        <button @click="triggerManualCheck" class="btn btn-primary">
+          <i class="ti ti-player-play"></i>
+          <span>Check All</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Connection Error -->
+    <div v-if="connectionError" class="alert alert-danger">
+      <i class="ti ti-alert-circle"></i>
+      <div>
+        <strong>Connection Error</strong>
+        <p>{{ connectionError }}</p>
+      </div>
+      <button @click="retryConnection" class="btn btn-secondary btn-small">
+        <i class="ti ti-refresh"></i>
+        Retry
+      </button>
     </div>
 
     <!-- Loading State -->
     <div v-if="loading && !connectionError" class="loading-state">
+      <div class="spinner"></div>
       <p>Loading dashboard data...</p>
     </div>
 
@@ -15,57 +44,88 @@
     <div v-if="!loading && !connectionError" class="dashboard-content">
       <!-- Statistics Cards -->
       <div class="stats-grid">
-        <div class="stat-card">
-          <h3>Total Monitors</h3>
-          <p class="stat-number">{{ stats.totalMonitors || 0 }}</p>
+        <div class="stat-card stat-primary">
+          <div class="stat-icon">
+            <i class="ti ti-server-2"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Total Monitors</div>
+            <div class="stat-value">{{ stats.totalMonitors || 0 }}</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <h3>Active</h3>
-          <p class="stat-number up">{{ stats.activeCount || 0 }}</p>
+
+        <div class="stat-card stat-success">
+          <div class="stat-icon">
+            <i class="ti ti-circle-check"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Active</div>
+            <div class="stat-value">{{ stats.activeCount || 0 }}</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <h3>Down</h3>
-          <p class="stat-number down">{{ stats.downCount || 0 }}</p>
+
+        <div class="stat-card stat-danger">
+          <div class="stat-icon">
+            <i class="ti ti-alert-triangle"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Down</div>
+            <div class="stat-value">{{ stats.downCount || 0 }}</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <h3>Avg Response</h3>
-          <p class="stat-number">{{ stats.avgResponseTime ? `${stats.avgResponseTime}ms` : 'N/A' }}</p>
+
+        <div class="stat-card stat-info">
+          <div class="stat-icon">
+            <i class="ti ti-clock"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Avg Response</div>
+            <div class="stat-value">{{ stats.avgResponseTime ? `${stats.avgResponseTime}ms` : 'N/A' }}</div>
+          </div>
         </div>
       </div>
 
       <!-- Scheduler Status -->
-      <div class="scheduler-status" v-if="schedulerStatus">
-        <h3>Scheduler Status</h3>
-        <div class="scheduler-info">
-          <span :class="{ 'status-active': schedulerStatus.isRunning, 'status-inactive': !schedulerStatus.isRunning }">
-            {{ schedulerStatus.isRunning ? '🟢 Running' : '🔴 Stopped' }}
-          </span>
-          <span class="scheduler-stats">
-            Last Run: {{ formatTime(schedulerStatus.stats?.lastRun) || 'Never' }}
-          </span>
-          <span class="scheduler-stats">
-            Total Checks: {{ schedulerStatus.stats?.totalChecks || 0 }}
-          </span>
+      <div class="scheduler-card" v-if="schedulerStatus">
+        <div class="scheduler-header">
+          <div class="scheduler-title">
+            <i class="ti ti-robot"></i>
+            <h3>Scheduler Status</h3>
+          </div>
+          <div class="scheduler-badge" :class="{ active: schedulerStatus.isRunning }">
+            <i class="ti" :class="schedulerStatus.isRunning ? 'ti-circle-check' : 'ti-circle-x'"></i>
+            {{ schedulerStatus.isRunning ? 'Running' : 'Stopped' }}
+          </div>
+        </div>
+        <div class="scheduler-stats">
+          <div class="scheduler-stat">
+            <i class="ti ti-clock-hour-3"></i>
+            <span>Last Run: {{ formatTime(schedulerStatus.stats?.lastRun) || 'Never' }}</span>
+          </div>
+          <div class="scheduler-stat">
+            <i class="ti ti-check"></i>
+            <span>Total Checks: {{ schedulerStatus.stats?.totalChecks || 0 }}</span>
+          </div>
         </div>
       </div>
 
       <!-- Monitor Status Grid -->
       <div class="monitors-section">
         <div class="section-header">
-          <h2>Monitor Status</h2>
-          <div class="section-actions">
-            <button @click="refreshData" :disabled="loading" class="btn-secondary">
-              {{ loading ? 'Refreshing...' : '🔄 Refresh' }}
-            </button>
-            <button @click="triggerManualCheck" class="btn-primary">
-              Check All Now
-            </button>
-          </div>
+          <h2>
+            <i class="ti ti-activity"></i>
+            Monitor Status
+          </h2>
         </div>
 
-        <div v-if="monitors.length === 0" class="no-monitors">
-          <p>No monitors configured yet.</p>
-          <router-link to="/monitors" class="btn-primary">Add Your First Monitor</router-link>
+        <div v-if="monitors.length === 0" class="empty-state">
+          <i class="ti ti-server-off"></i>
+          <h3>No monitors configured</h3>
+          <p>Get started by adding your first monitor</p>
+          <router-link to="/monitors" class="btn btn-primary">
+            <i class="ti ti-plus"></i>
+            Add Your First Monitor
+          </router-link>
         </div>
 
         <div v-else class="monitors-grid">
@@ -73,26 +133,41 @@
             v-for="monitor in monitors"
             :key="monitor.id"
             class="monitor-card"
-            :class="{ up: monitor.status === 'up', down: monitor.status === 'down', error: monitor.status === 'error' }"
+            :class="getMonitorClass(monitor.status)"
           >
             <div class="monitor-header">
-              <h3>{{ monitor.name }}</h3>
+              <div class="monitor-title">
+                <i class="ti" :class="getMonitorIcon(monitor.status)"></i>
+                <h3>{{ monitor.name }}</h3>
+              </div>
               <span class="status-badge" :class="monitor.status">
                 {{ monitor.status || 'unknown' }}
               </span>
             </div>
-            <p class="monitor-url">{{ monitor.url }}</p>
-            <div class="monitor-details">
-              <span v-if="monitor.responseTime">
-                Response: {{ monitor.responseTime }}ms
-              </span>
-              <span>Last Check: {{ formatTime(monitor.lastCheck) }}</span>
+            
+            <div class="monitor-url">
+              <i class="ti ti-link"></i>
+              <span>{{ monitor.url }}</span>
             </div>
+            
+            <div class="monitor-details">
+              <div class="monitor-detail" v-if="monitor.responseTime">
+                <i class="ti ti-clock"></i>
+                <span>{{ monitor.responseTime }}ms</span>
+              </div>
+              <div class="monitor-detail">
+                <i class="ti ti-calendar-time"></i>
+                <span>{{ formatTime(monitor.lastCheck) }}</span>
+              </div>
+            </div>
+            
             <div class="monitor-actions">
-              <button @click="checkMonitor(monitor.id)" class="btn-small">
+              <button @click="checkMonitor(monitor.id)" class="btn btn-small btn-primary">
+                <i class="ti ti-refresh"></i>
                 Check Now
               </button>
-              <router-link :to="`/monitors/${monitor.id}`" class="btn-small btn-secondary">
+              <router-link :to="`/monitors/${monitor.id}`" class="btn btn-small btn-secondary">
+                <i class="ti ti-eye"></i>
                 Details
               </router-link>
             </div>
@@ -175,13 +250,13 @@ const fetchDashboardData = async () => {
     // Calculate statistics
     stats.value = {
       totalMonitors: monitorsData.length,
-      activeCount: monitorsWithStatus.filter(m => m.status === 'up').length,
-      downCount: monitorsWithStatus.filter(m => m.status === 'down').length,
+      activeCount: monitorsWithStatus.filter((m: any) => m.status === 'up').length,
+      downCount: monitorsWithStatus.filter((m: any) => m.status === 'down').length,
       avgResponseTime: Math.floor(
         monitorsWithStatus
-          .filter(m => m.responseTime)
-          .reduce((acc, m) => acc + m.responseTime, 0) /
-        monitorsWithStatus.filter(m => m.responseTime).length || 1
+          .filter((m: any) => m.responseTime)
+          .reduce((acc: number, m: any) => acc + m.responseTime, 0) /
+        monitorsWithStatus.filter((m: any) => m.responseTime).length || 1
       )
     }
 
@@ -193,7 +268,7 @@ const fetchDashboardData = async () => {
       schedulerStatus.value = null
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching dashboard data:', error)
     connectionError.value = error.message || 'Failed to connect to backend'
   } finally {
@@ -215,7 +290,7 @@ const checkMonitor = async (monitorId: number) => {
     await apiService.checkMonitor(monitorId)
     // Refresh data after a brief delay to show updated status
     setTimeout(fetchDashboardData, 1000)
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error checking monitor ${monitorId}:`, error)
     alert(`Failed to check monitor: ${error.message}`)
   }
@@ -227,7 +302,7 @@ const triggerManualCheck = async () => {
     await apiService.triggerManualCheck()
     // Refresh data to show updated results
     setTimeout(fetchDashboardData, 2000)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error triggering manual check:', error)
     alert(`Failed to trigger manual check: ${error.message}`)
   }
@@ -239,6 +314,23 @@ const refreshData = () => {
 
 const retryConnection = () => {
   fetchDashboardData()
+}
+
+const getMonitorClass = (status: string) => {
+  return `monitor-${status || 'unknown'}`
+}
+
+const getMonitorIcon = (status: string) => {
+  switch (status) {
+    case 'up':
+      return 'ti-circle-check'
+    case 'down':
+      return 'ti-circle-x'
+    case 'error':
+      return 'ti-alert-triangle'
+    default:
+      return 'ti-help-circle'
+  }
 }
 
 // Auto-refresh every 30 seconds
@@ -256,245 +348,476 @@ onUnmounted(() => {
 
 <style scoped>
 .dashboard {
-  min-height: 100vh;
-}
-
-.connection-error {
-  background: #fee;
-  border: 1px solid #fcc;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 2rem;
-  color: #666;
-}
-
-.dashboard-content {
   animation: fadeIn 0.5s ease-in;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.page-title .ti {
+  color: var(--primary);
+  font-size: 2.5rem;
+}
+
+.page-subtitle {
+  color: var(--gray-600);
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Alert */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-left: 4px solid var(--danger);
+  color: var(--gray-900);
+}
+
+.alert .ti {
+  font-size: 1.5rem;
+  color: var(--danger);
+}
+
+.alert strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.alert p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--gray-600);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
 .stat-card {
   background: white;
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  text-align: center;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  border-left: 4px solid;
 }
 
-.stat-number {
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.stat-primary {
+  border-left-color: var(--primary);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+}
+
+.stat-success {
+  border-left-color: var(--success);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.stat-danger {
+  border-left-color: var(--danger);
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.stat-info {
+  border-left-color: var(--info);
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.stat-primary .stat-icon {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.stat-success .stat-icon {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  color: white;
+}
+
+.stat-danger .stat-icon {
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+  color: white;
+}
+
+.stat-info .stat-icon {
+  background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
+  color: white;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
   font-size: 2rem;
-  font-weight: bold;
-  margin: 0.5rem 0 0 0;
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1;
 }
 
-.stat-number.up {
-  color: #27ae60;
-}
-
-.stat-number.down {
-  color: #e74c3c;
-}
-
-.scheduler-status {
+/* Scheduler Card */
+.scheduler-card {
   background: white;
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
   margin-bottom: 2rem;
 }
 
-.scheduler-status h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #2c3e50;
-}
-
-.scheduler-info {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.status-active {
-  color: #27ae60;
-  font-weight: bold;
-}
-
-.status-inactive {
-  color: #95a5a6;
-  font-weight: bold;
-}
-
-.scheduler-stats {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
-.monitors-section {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.section-header {
+.scheduler-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 1rem;
+}
+
+.scheduler-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scheduler-title .ti {
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+.scheduler-title h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--gray-900);
+}
+
+.scheduler-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.scheduler-badge.active {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  color: white;
+}
+
+.scheduler-stats {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.scheduler-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.scheduler-stat .ti {
+  color: var(--primary);
+}
+
+/* Monitors Section */
+.monitors-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.section-header {
   margin-bottom: 1.5rem;
 }
 
 .section-header h2 {
   margin: 0;
-}
-
-.section-actions {
+  font-size: 1.25rem;
+  color: var(--gray-900);
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.no-monitors {
+.section-header h2 .ti {
+  color: var(--primary);
+}
+
+/* Empty State */
+.empty-state {
   text-align: center;
-  padding: 3rem;
-  color: #7f8c8d;
+  padding: 4rem 2rem;
 }
 
-.no-monitors p {
+.empty-state .ti {
+  font-size: 4rem;
+  color: var(--gray-300);
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: var(--gray-600);
   margin-bottom: 1.5rem;
-  font-size: 1.1rem;
 }
 
+/* Monitors Grid */
 .monitors-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .monitor-card {
-  padding: 1rem;
-  border-radius: 6px;
-  border-left: 4px solid #bdc3c7;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--gray-300);
   background: white;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .monitor-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
-.monitor-card.up {
-  border-left-color: #27ae60;
-  background: #f8fff8;
+.monitor-up {
+  border-left-color: var(--success);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
 }
 
-.monitor-card.down {
-  border-left-color: #e74c3c;
-  background: #fff8f8;
+.monitor-down {
+  border-left-color: var(--danger);
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
 }
 
-.monitor-card.error {
-  border-left-color: #f39c12;
-  background: #fff8f0;
+.monitor-error {
+  border-left-color: var(--warning);
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
 }
 
 .monitor-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
 }
 
-.monitor-header h3 {
+.monitor-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.monitor-title .ti {
+  font-size: 1.5rem;
+}
+
+.monitor-up .monitor-title .ti {
+  color: var(--success);
+}
+
+.monitor-down .monitor-title .ti {
+  color: var(--danger);
+}
+
+.monitor-error .monitor-title .ti {
+  color: var(--warning);
+}
+
+.monitor-title h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.125rem;
+  color: var(--gray-900);
+  font-weight: 600;
 }
 
 .status-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: bold;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .status-badge.up {
-  background: #27ae60;
+  background: var(--success);
   color: white;
 }
 
 .status-badge.down {
-  background: #e74c3c;
+  background: var(--danger);
   color: white;
 }
 
 .status-badge.error {
-  background: #f39c12;
+  background: var(--warning);
+  color: white;
+}
+
+.status-badge.unknown {
+  background: var(--gray-400);
   color: white;
 }
 
 .monitor-url {
-  color: #7f8c8d;
-  margin: 0.5rem 0;
-  font-family: monospace;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray-600);
+  margin-bottom: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  word-break: break-all;
+}
+
+.monitor-url .ti {
+  flex-shrink: 0;
+  color: var(--gray-400);
 }
 
 .monitor-details {
   display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  color: #7f8c8d;
+  gap: 1.5rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.monitor-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.monitor-detail .ti {
+  color: var(--gray-400);
 }
 
 .monitor-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.btn-small {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.8rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-small.btn-secondary {
-  background: #95a5a6;
-  color: white;
-}
-
-.btn-small.btn-secondary:hover {
-  background: #7f8c8d;
-}
-
-.btn-small:not(.btn-secondary) {
-  background: #3498db;
-  color: white;
-}
-
-.btn-small:not(.btn-secondary):hover {
-  background: #2980b9;
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .monitors-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

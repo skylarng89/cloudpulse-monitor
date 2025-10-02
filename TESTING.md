@@ -1,5 +1,18 @@
 # Testing CloudPulse Monitor
 
+## UI/UX Updates
+
+### What's New
+The application now features a modern, vibrant design with:
+- **Tabler Icons**: Fast-loading, scalable icons throughout
+- **Gradient Header**: Purple gradient with animated activity icon
+- **Color-Coded Stats**: Green for active, red for down, blue for info
+- **Modern Cards**: Smooth shadows, hover effects, and animations
+- **Better Typography**: Inter font for clean, professional look
+
+### View the Changes
+Simply refresh your browser to see the new design!
+
 ## Quick Test Guide
 
 ### 1. Restart the Backend Server
