@@ -6,8 +6,17 @@
         <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <i class="ti ti-dashboard text-purple-600 text-4xl"></i>
           Dashboard
+          <!-- Silent refresh indicator -->
+          <span 
+            v-if="isRefreshing" 
+            class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 bg-purple-50 rounded-full animate-pulse"
+            title="Updating data in background..."
+          >
+            <i class="ti ti-refresh text-xs"></i>
+            Updating
+          </span>
         </h1>
-        <p class="mt-1 text-sm text-gray-600">Monitor your services in real-time</p>
+        <p class="mt-1 text-sm text-gray-600">Monitor your services in real-time • Auto-refreshes every 30s</p>
       </div>
       <div class="flex items-center gap-3">
         <button 
@@ -320,12 +329,18 @@ const stats = ref<DashboardStats>({
 })
 const schedulerStatus = ref<any>(null)
 const loading = ref(true)
+const isRefreshing = ref(false)
 const connectionError = ref('')
 let refreshInterval: NodeJS.Timeout | null = null
 
-const fetchDashboardData = async () => {
+const fetchDashboardData = async (silent = false) => {
   try {
-    loading.value = true
+    // Only show loading spinner on initial load, not on auto-refresh
+    if (!silent) {
+      loading.value = true
+    } else {
+      isRefreshing.value = true
+    }
     connectionError.value = ''
 
     const monitorsData = await apiService.getMonitors()
@@ -374,6 +389,7 @@ const fetchDashboardData = async () => {
     connectionError.value = error.message || 'Failed to connect to backend'
   } finally {
     loading.value = false
+    isRefreshing.value = false
   }
 }
 
@@ -443,7 +459,8 @@ const retryConnection = () => {
 
 onMounted(() => {
   fetchDashboardData()
-  refreshInterval = setInterval(fetchDashboardData, 30000)
+  // Auto-refresh every 30 seconds with silent mode (no loading spinner)
+  refreshInterval = setInterval(() => fetchDashboardData(true), 30000)
 })
 
 onUnmounted(() => {
