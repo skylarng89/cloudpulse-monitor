@@ -350,6 +350,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import apiService from '@/services/api'
+import { useToast } from '@/composables/useToast'
 
 interface Monitor {
   id: number
@@ -372,6 +373,7 @@ const editingMonitor = ref<Monitor | null>(null)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
+const { error: showError, success: showSuccess } = useToast()
 
 const newMonitor = ref({
   name: '',
@@ -556,7 +558,7 @@ const addMonitor = async () => {
       validationErrors.value.name = error.message
     } else {
       const action = editingMonitor.value ? 'update' : 'create'
-      alert(`Failed to ${action} monitor: ${error.message}`)
+      showError(`Failed to ${action} monitor: ${error.message}`)
     }
   } finally {
     submitting.value = false
@@ -593,8 +595,9 @@ const deleteMonitor = async () => {
     await apiService.deleteMonitor(deleteTarget.value.id)
     await fetchMonitors()
     deleteTarget.value = null
+    showSuccess('Monitor deleted successfully')
   } catch (error: any) {
-    alert(`Failed to delete monitor: ${error.message}`)
+    showError(`Failed to delete monitor: ${error.message}`)
   } finally {
     deleting.value = false
   }
@@ -605,7 +608,7 @@ const checkMonitor = async (monitorId: number) => {
     await apiService.checkMonitor(monitorId)
     setTimeout(fetchMonitors, 1000)
   } catch (error: any) {
-    alert(`Failed to check monitor: ${error.message}`)
+    showError(`Failed to check monitor: ${error.message}`)
   }
 }
 

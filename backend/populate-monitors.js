@@ -1,8 +1,8 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-// Connect to database
-const dbPath = path.join(__dirname, 'monitoring.db');
+// Connect to database (same path as backend uses)
+const dbPath = path.join(__dirname, 'data', 'uptime.db');
 const db = new Database(dbPath);
 
 // Create tables if they don't exist

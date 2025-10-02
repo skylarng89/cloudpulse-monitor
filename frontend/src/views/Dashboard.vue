@@ -414,6 +414,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import apiService from '@/services/api'
 import { format } from 'date-fns'
+import { useToast } from '@/composables/useToast'
 
 /**
  * Monitor status type
@@ -474,6 +475,7 @@ const checkingMonitors = ref(new Set<number>())
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(12)
+const { error: showError, success: showSuccess } = useToast()
 let refreshInterval: NodeJS.Timeout | null = null
 
 /**
@@ -708,7 +710,7 @@ const checkMonitor = async (monitorId: number): Promise<void> => {
     }, 1000)
   } catch (error: any) {
     checkingMonitors.value.delete(monitorId)
-    alert(`Failed to check monitor: ${error.message}`)
+    showError(`Failed to check monitor: ${error.message}`)
   }
 }
 
@@ -734,12 +736,12 @@ const triggerManualCheck = async (): Promise<void> => {
       })
       .catch((error: Error) => {
         checkingMonitors.value.clear()
-        alert(`Failed to trigger manual check: ${error.message}`)
+        showError(`Failed to trigger manual check: ${error.message}`)
       })
   } catch (error) {
     checkingMonitors.value.clear()
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    alert(`Failed to trigger manual check: ${errorMessage}`)
+    showError(`Failed to trigger manual check: ${errorMessage}`)
   }
 }
 

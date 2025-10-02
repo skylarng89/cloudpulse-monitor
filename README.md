@@ -20,3 +20,45 @@ cloudpulse-monitor/
 ├── frontend-nginx.conf       # Frontend serving config
 └── README.md                  # This file
 ```
+
+## Development Commands
+
+### Populate Test Data
+
+To populate the database with 50 test monitors for development/testing:
+
+```bash
+cd backend
+npm run populate
+```
+
+This will create:
+- 50 realistic monitors (HTTP, Ping, TCP)
+- Mixed intervals (30s, 60s, 120s, 180s, 300s)
+- Realistic company names and URLs
+
+**Note:** Restart your backend after populating to schedule the new monitors.
+
+### Clean Up Test Data
+
+To remove all test monitors from the database:
+
+**Option 1: Delete all monitors**
+```bash
+cd backend
+sqlite3 monitoring.db "DELETE FROM monitors;"
+sqlite3 monitoring.db "DELETE FROM monitor_checks;"
+```
+
+**Option 2: Delete only test monitors** (keeps your real monitors)
+```bash
+cd backend
+sqlite3 monitoring.db "DELETE FROM monitors WHERE name LIKE '% API' OR name LIKE '% Website' OR name LIKE '% CDN' OR name LIKE '% Database' OR name LIKE '% Cache' OR name LIKE '% Storage' OR name LIKE '% Auth';"
+```
+
+**Option 3: Reset entire database**
+```bash
+cd backend
+rm monitoring.db
+# Restart backend - it will recreate the database
+```
