@@ -1,157 +1,235 @@
 <template>
-  <div class="monitors-page">
-    <div class="page-header">
+  <div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="page-title">
-          <i class="ti ti-server"></i>
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <i class="ti ti-server text-purple-600 text-4xl"></i>
           Monitor Management
         </h1>
-        <p class="page-subtitle">Manage your monitoring endpoints</p>
+        <p class="mt-1 text-sm text-gray-600">Manage your monitoring endpoints</p>
       </div>
-      <button @click="showAddForm = true" class="btn btn-primary">
+      <button 
+        @click="showAddForm = true"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-sm"
+      >
         <i class="ti ti-plus"></i>
         Add Monitor
       </button>
     </div>
 
-    <!-- Connection Status -->
-    <div v-if="connectionError" class="connection-error">
-      <p>⚠️ Unable to connect to backend: {{ connectionError }}</p>
-      <button @click="retryConnection" class="btn-secondary">Retry Connection</button>
+    <!-- Connection Error -->
+    <div v-if="connectionError" class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
+      <div class="flex items-start">
+        <i class="ti ti-alert-circle text-red-400 text-xl flex-shrink-0"></i>
+        <div class="ml-3 flex-1">
+          <h3 class="text-sm font-medium text-red-800">Connection Error</h3>
+          <p class="mt-1 text-sm text-red-700">{{ connectionError }}</p>
+        </div>
+        <button 
+          @click="retryConnection"
+          class="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-sm font-medium rounded-md transition-colors"
+        >
+          <i class="ti ti-refresh text-sm"></i>
+          Retry
+        </button>
+      </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading && !connectionError" class="loading-state">
-      <p>Loading monitors...</p>
-    </div>
-
-    <!-- Add Monitor Modal -->
-    <div v-if="showAddForm" class="modal-overlay" @click="showAddForm = false">
-      <div class="modal" @click.stop>
-        <h3>Add New Monitor</h3>
-        <form @submit.prevent="addMonitor" class="monitor-form">
-          <div class="form-group">
-            <label for="name">Name:</label>
-            <input
-              id="name"
-              v-model="newMonitor.name"
-              type="text"
-              required
-              placeholder="My Website"
-              :class="{ 'error': validationErrors.name }"
-            />
-            <span v-if="validationErrors.name" class="error-message">{{ validationErrors.name }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="url">URL:</label>
-            <input
-              id="url"
-              v-model="newMonitor.url"
-              type="url"
-              required
-              placeholder="https://example.com"
-              :class="{ 'error': validationErrors.url }"
-            />
-            <span v-if="validationErrors.url" class="error-message">{{ validationErrors.url }}</span>
-          </div>
-
-          <div class="form-group">
-            <label for="type">Type:</label>
-            <select id="type" v-model="newMonitor.type">
-              <option value="http">HTTP</option>
-              <option value="ping">Ping</option>
-              <option value="tcp">TCP Port</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="interval">Check Interval (seconds):</label>
-            <input
-              id="interval"
-              v-model.number="newMonitor.interval"
-              type="number"
-              min="30"
-              max="3600"
-              required
-              :class="{ 'error': validationErrors.interval }"
-            />
-            <span v-if="validationErrors.interval" class="error-message">{{ validationErrors.interval }}</span>
-          </div>
-
-          <div class="form-actions">
-            <button type="button" @click="cancelAdd" class="btn btn-secondary">
-              <i class="ti ti-x"></i>
-              Cancel
-            </button>
-            <button type="submit" :disabled="submitting" class="btn btn-primary">
-              <i class="ti ti-check"></i>
-              {{ submitting ? 'Adding...' : 'Add Monitor' }}
-            </button>
-          </div>
-        </form>
-      </div>
+    <div v-if="loading && !connectionError" class="flex flex-col items-center justify-center py-12">
+      <div class="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+      <p class="mt-4 text-sm text-gray-600">Loading monitors...</p>
     </div>
 
     <!-- Monitors Table -->
-    <div v-if="!loading && !connectionError" class="monitors-table">
-      <div v-if="monitors.length === 0" class="no-monitors">
-        <p>No monitors configured yet.</p>
-        <p>Add your first monitor to start monitoring your websites and services.</p>
+    <div v-if="!loading && !connectionError" class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+      <!-- Empty State -->
+      <div v-if="monitors.length === 0" class="px-6 py-12 text-center">
+        <i class="ti ti-server-off text-gray-300 text-6xl"></i>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">No monitors configured</h3>
+        <p class="mt-2 text-sm text-gray-600">Add your first monitor to start monitoring your websites and services.</p>
       </div>
 
-      <table v-else>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>URL</th>
-            <th>Type</th>
-            <th>Interval</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="monitor in monitors" :key="monitor.id">
-            <td>{{ monitor.name }}</td>
-            <td>{{ monitor.url }}</td>
-            <td>{{ monitor.type.toUpperCase() }}</td>
-            <td>{{ monitor.interval }}s</td>
-            <td>
-              <span class="status-badge" :class="getMonitorStatus(monitor)">
-                {{ getMonitorStatusText(monitor) }}
-              </span>
-            </td>
-            <td>
-              <div class="action-buttons">
-                <button @click="checkMonitor(monitor.id)" class="btn btn-small btn-primary" title="Check Now">
-                  <i class="ti ti-refresh"></i>
-                </button>
-                <button @click="confirmDelete(monitor)" class="btn btn-small btn-danger" title="Delete">
-                  <i class="ti ti-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Table -->
+      <div v-else class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Interval</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="monitor in monitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ monitor.name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{{ monitor.url }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.type.toUpperCase() }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.interval_seconds }}s</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  Unknown
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div class="flex items-center justify-end gap-2">
+                  <button 
+                    @click="checkMonitor(monitor.id)"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors"
+                    title="Check Now"
+                  >
+                    <i class="ti ti-refresh text-sm"></i>
+                  </button>
+                  <button 
+                    @click="confirmDelete(monitor)"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors"
+                    title="Delete"
+                  >
+                    <i class="ti ti-trash text-sm"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Add Monitor Modal -->
+    <div v-if="showAddForm" class="fixed inset-0 z-50 overflow-y-auto" @click="showAddForm = false">
+      <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
+        
+        <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all" @click.stop>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Add New Monitor</h3>
+            <button @click="showAddForm = false" class="text-gray-400 hover:text-gray-500">
+              <i class="ti ti-x text-xl"></i>
+            </button>
+          </div>
+
+          <form @submit.prevent="addMonitor" class="space-y-4">
+            <!-- Name -->
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input
+                id="name"
+                v-model="newMonitor.name"
+                type="text"
+                required
+                placeholder="My Website"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                :class="{ 'border-red-500': validationErrors.name }"
+              />
+              <p v-if="validationErrors.name" class="mt-1 text-sm text-red-600">{{ validationErrors.name }}</p>
+            </div>
+
+            <!-- URL -->
+            <div>
+              <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL</label>
+              <input
+                id="url"
+                v-model="newMonitor.url"
+                type="url"
+                required
+                placeholder="https://example.com"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                :class="{ 'border-red-500': validationErrors.url }"
+              />
+              <p v-if="validationErrors.url" class="mt-1 text-sm text-red-600">{{ validationErrors.url }}</p>
+            </div>
+
+            <!-- Type -->
+            <div>
+              <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <select
+                id="type"
+                v-model="newMonitor.type"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              >
+                <option value="http">HTTP</option>
+                <option value="ping">Ping</option>
+                <option value="tcp">TCP Port</option>
+              </select>
+            </div>
+
+            <!-- Interval -->
+            <div>
+              <label for="interval" class="block text-sm font-medium text-gray-700 mb-1">Check Interval (seconds)</label>
+              <input
+                id="interval"
+                v-model.number="newMonitor.interval_seconds"
+                type="number"
+                min="30"
+                max="3600"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                :class="{ 'border-red-500': validationErrors.interval }"
+              />
+              <p v-if="validationErrors.interval" class="mt-1 text-sm text-red-600">{{ validationErrors.interval }}</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3 pt-4">
+              <button
+                type="button"
+                @click="cancelAdd"
+                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+              >
+                <i class="ti ti-x"></i>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="submitting"
+                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-colors"
+              >
+                <i class="ti ti-check"></i>
+                {{ submitting ? 'Adding...' : 'Add Monitor' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="deleteTarget" class="modal-overlay" @click="deleteTarget = null">
-      <div class="modal" @click.stop>
-        <h3>Delete Monitor</h3>
-        <p>Are you sure you want to delete "{{ deleteTarget.name }}"?</p>
-        <p class="warning">This action cannot be undone.</p>
-        <div class="form-actions">
-          <button @click="deleteTarget = null" class="btn btn-secondary">
-            <i class="ti ti-x"></i>
-            Cancel
-          </button>
-          <button @click="deleteMonitor" :disabled="deleting" class="btn btn-danger">
-            <i class="ti ti-trash"></i>
-            {{ deleting ? 'Deleting...' : 'Delete Monitor' }}
-          </button>
+    <div v-if="deleteTarget" class="fixed inset-0 z-50 overflow-y-auto" @click="deleteTarget = null">
+      <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
+        
+        <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all" @click.stop>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <i class="ti ti-alert-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900">Delete Monitor</h3>
+          </div>
+
+          <p class="text-sm text-gray-600 mb-2">Are you sure you want to delete "{{ deleteTarget.name }}"?</p>
+          <p class="text-sm text-yellow-700 font-medium">This action cannot be undone.</p>
+
+          <div class="flex items-center gap-3 mt-6">
+            <button
+              @click="deleteTarget = null"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+            >
+              <i class="ti ti-x"></i>
+              Cancel
+            </button>
+            <button
+              @click="deleteMonitor"
+              :disabled="deleting"
+              class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-colors"
+            >
+              <i class="ti ti-trash"></i>
+              {{ deleting ? 'Deleting...' : 'Delete Monitor' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -167,7 +245,7 @@ interface Monitor {
   name: string
   url: string
   type: string
-  interval: number
+  interval_seconds: number
   active: boolean
   created_at: string
 }
@@ -184,7 +262,7 @@ const newMonitor = ref({
   name: '',
   url: '',
   type: 'http',
-  interval: 60
+  interval_seconds: 60
 })
 
 const validationErrors = ref<Record<string, string>>({})
@@ -193,11 +271,9 @@ const fetchMonitors = async () => {
   try {
     loading.value = true
     connectionError.value = ''
-
     const data = await apiService.getMonitors()
     monitors.value = data
-  } catch (error) {
-    console.error('Error fetching monitors:', error)
+  } catch (error: any) {
     connectionError.value = error.message || 'Failed to connect to backend'
   } finally {
     loading.value = false
@@ -208,7 +284,6 @@ const validateForm = () => {
   validationErrors.value = {}
   let isValid = true
 
-  // Name validation
   if (!newMonitor.value.name.trim()) {
     validationErrors.value.name = 'Monitor name is required'
     isValid = false
@@ -217,7 +292,6 @@ const validateForm = () => {
     isValid = false
   }
 
-  // URL validation
   if (!newMonitor.value.url.trim()) {
     validationErrors.value.url = 'URL is required'
     isValid = false
@@ -234,8 +308,7 @@ const validateForm = () => {
     }
   }
 
-  // Interval validation
-  if (newMonitor.value.interval < 30 || newMonitor.value.interval > 3600) {
+  if (newMonitor.value.interval_seconds < 30 || newMonitor.value.interval_seconds > 3600) {
     validationErrors.value.interval = 'Interval must be between 30 and 3600 seconds'
     isValid = false
   }
@@ -244,23 +317,16 @@ const validateForm = () => {
 }
 
 const addMonitor = async () => {
-  if (!validateForm()) {
-    return
-  }
+  if (!validateForm()) return
 
   try {
     submitting.value = true
     await apiService.createMonitor(newMonitor.value)
-
-    // Reset form and close modal
-    newMonitor.value = { name: '', url: '', type: 'http', interval: 60 }
+    newMonitor.value = { name: '', url: '', type: 'http', interval_seconds: 60 }
     showAddForm.value = false
     validationErrors.value = {}
-
-    // Refresh monitors list
     await fetchMonitors()
-  } catch (error) {
-    console.error('Error creating monitor:', error)
+  } catch (error: any) {
     if (error.message.includes('already exists')) {
       validationErrors.value.name = error.message
     } else {
@@ -273,11 +339,11 @@ const addMonitor = async () => {
 
 const cancelAdd = () => {
   showAddForm.value = false
-  newMonitor.value = { name: '', url: '', type: 'http', interval: 60 }
+  newMonitor.value = { name: '', url: '', type: 'http', interval_seconds: 60 }
   validationErrors.value = {}
 }
 
-const confirmDelete = (monitor) => {
+const confirmDelete = (monitor: Monitor) => {
   deleteTarget.value = monitor
 }
 
@@ -287,37 +353,22 @@ const deleteMonitor = async () => {
   try {
     deleting.value = true
     await apiService.deleteMonitor(deleteTarget.value.id)
-
-    // Refresh monitors list
     await fetchMonitors()
     deleteTarget.value = null
-  } catch (error) {
-    console.error('Error deleting monitor:', error)
+  } catch (error: any) {
     alert(`Failed to delete monitor: ${error.message}`)
   } finally {
     deleting.value = false
   }
 }
 
-const checkMonitor = async (monitorId) => {
+const checkMonitor = async (monitorId: number) => {
   try {
     await apiService.checkMonitor(monitorId)
-    // Refresh data after check
     setTimeout(fetchMonitors, 1000)
-  } catch (error) {
-    console.error(`Error checking monitor ${monitorId}:`, error)
+  } catch (error: any) {
     alert(`Failed to check monitor: ${error.message}`)
   }
-}
-
-const getMonitorStatus = (monitor) => {
-  // For now, show 'unknown' status since we're not fetching real-time status
-  // In a full implementation, you'd fetch the latest check result
-  return 'unknown'
-}
-
-const getMonitorStatusText = (monitor) => {
-  return 'Unknown'
 }
 
 const retryConnection = () => {
@@ -328,208 +379,3 @@ onMounted(() => {
   fetchMonitors()
 })
 </script>
-
-<style scoped>
-/* Page Header */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--gray-900);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0;
-}
-
-.page-title .ti {
-  color: var(--primary);
-  font-size: 2.5rem;
-}
-
-.page-subtitle {
-  color: var(--gray-600);
-  margin-top: 0.25rem;
-  font-size: 0.9375rem;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.connection-error {
-  background: #fee;
-  border: 1px solid #fcc;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 2rem;
-  color: #666;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.modal {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--radius-xl);
-  width: 90%;
-  max-width: 500px;
-  box-shadow: var(--shadow-xl);
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.monitor-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group select {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input.error {
-  border-color: #e74c3c;
-}
-
-.error-message {
-  color: #e74c3c;
-  font-size: 0.85rem;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1rem;
-}
-
-.monitors-table {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.monitors-table table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.monitors-table th,
-.monitors-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.monitors-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-}
-
-.monitors-table tbody tr:hover {
-  background: #f8f9fa;
-}
-
-.no-monitors {
-  text-align: center;
-  padding: 3rem;
-  color: #7f8c8d;
-}
-
-.no-monitors p {
-  margin-bottom: 1rem;
-}
-
-.status-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.status-badge.up {
-  background: #27ae60;
-  color: white;
-}
-
-.status-badge.down {
-  background: #e74c3c;
-  color: white;
-}
-
-.status-badge.unknown {
-  background: #95a5a6;
-  color: white;
-}
-
-.warning {
-  color: #f39c12;
-  font-weight: 500;
-  margin: 1rem 0;
-}
-</style>

@@ -1,17 +1,31 @@
 # Testing CloudPulse Monitor
 
-## UI/UX Updates
+## Quick Start
 
-### What's New
-The application now features a modern, vibrant design with:
-- **Tabler Icons**: Fast-loading, scalable icons throughout
-- **Gradient Header**: Purple gradient with animated activity icon
-- **Color-Coded Stats**: Green for active, red for down, blue for info
-- **Modern Cards**: Smooth shadows, hover effects, and animations
-- **Better Typography**: Inter font for clean, professional look
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Frontend runs on: http://localhost:5173
 
-### View the Changes
-Simply refresh your browser to see the new design!
+### Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+Backend runs on: http://localhost:3000
+
+## UI/UX Features
+
+The application features a modern design built with:
+- **Tailwind CSS v4**: Utility-first CSS framework
+- **Tabler Icons**: Professional icon set
+- **Vite 5**: Lightning-fast development
+- **Vue 3**: Composition API with TypeScript
+- **Responsive Design**: Mobile-first approach
 
 ## Quick Test Guide
 
