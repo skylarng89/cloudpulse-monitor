@@ -336,21 +336,47 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import apiService from '@/services/api'
 import { format } from 'date-fns'
 
+/**
+ * Monitor status type
+ */
+type MonitorStatus = 'up' | 'down' | 'error' | 'unknown'
+
+/**
+ * Monitor interface representing a monitoring endpoint
+ */
 interface Monitor {
   id: number
   name: string
   url: string
   type: string
-  status?: 'up' | 'down' | 'error'
-  responseTime?: number
-  lastCheck?: string
+  status?: MonitorStatus
+  responseTime?: number | null
+  lastCheck?: string | null
 }
 
+/**
+ * Dashboard statistics interface
+ */
 interface DashboardStats {
   totalMonitors: number
   activeCount: number
   downCount: number
   avgResponseTime?: number
+}
+
+/**
+ * Scheduler status interface
+ */
+interface SchedulerStatus {
+  isRunning: boolean
+  scheduledJobs: number
+  stats?: {
+    totalChecks: number
+    lastCheck: string | null
+    lastRun?: string | null
+    errors: number
+  }
+  uptime: number | null
 }
 
 const monitors = ref<Monitor[]>([])
@@ -360,7 +386,7 @@ const stats = ref<DashboardStats>({
   downCount: 0,
   avgResponseTime: 0
 })
-const schedulerStatus = ref<any>(null)
+const schedulerStatus = ref<SchedulerStatus | null>(null)
 const loading = ref(true)
 const isRefreshing = ref(false)
 const connectionError = ref('')
@@ -368,19 +394,24 @@ const refreshIntervalSeconds = ref(30)
 const checkingMonitors = ref(new Set<number>())
 let refreshInterval: NodeJS.Timeout | null = null
 
-// Load saved refresh interval from localStorage
-const loadRefreshInterval = () => {
+/**
+ * Load saved refresh interval from localStorage
+ */
+const loadRefreshInterval = (): void => {
   const saved = localStorage.getItem('dashboardRefreshInterval')
   if (saved) {
-    const parsed = parseInt(saved)
+    const parsed = parseInt(saved, 10)
     if ([30, 60, 120, 180, 240, 300].includes(parsed)) {
       refreshIntervalSeconds.value = parsed
     }
   }
 }
 
-// Computed property for refresh label
-const getRefreshLabel = computed(() => {
+/**
+ * Computed property for refresh label
+ * @returns Formatted refresh interval string
+ */
+const getRefreshLabel = computed((): string => {
   const seconds = refreshIntervalSeconds.value
   if (seconds < 60) {
     return `${seconds}s`
@@ -390,7 +421,11 @@ const getRefreshLabel = computed(() => {
   }
 })
 
-const fetchDashboardData = async (silent = false) => {
+/**
+ * Fetch dashboard data from API
+ * @param silent - If true, shows subtle refresh indicator instead of full loading spinner
+ */
+const fetchDashboardData = async (silent = false): Promise<void> => {
   try {
     // Only show loading spinner on initial load, not on auto-refresh
     if (!silent) {
@@ -402,21 +437,21 @@ const fetchDashboardData = async (silent = false) => {
 
     const monitorsData = await apiService.getMonitors()
     const monitorsWithStatus = await Promise.all(
-      monitorsData.map(async (monitor: Monitor) => {
+      monitorsData.map(async (monitor: Monitor): Promise<Monitor> => {
         try {
           const checks = await apiService.getMonitorChecks(monitor.id, { limit: 1 })
           const latestCheck = checks[0]
           return {
             ...monitor,
-            status: latestCheck?.status || 'unknown',
-            responseTime: latestCheck?.response_time,
-            lastCheck: latestCheck?.checked_at
+            status: (latestCheck?.status as MonitorStatus) || 'unknown',
+            responseTime: latestCheck?.response_time ?? null,
+            lastCheck: latestCheck?.checked_at ?? null
           }
         } catch (error) {
           console.warn(`Could not fetch checks for monitor ${monitor.id}:`, error)
           return {
             ...monitor,
-            status: 'unknown',
+            status: 'unknown' as MonitorStatus,
             responseTime: null,
             lastCheck: null
           }
@@ -425,16 +460,22 @@ const fetchDashboardData = async (silent = false) => {
     )
 
     monitors.value = monitorsWithStatus
+    
+    // Calculate statistics
+    const monitorsWithResponseTime = monitorsWithStatus.filter((m): m is Monitor & { responseTime: number } => 
+      m.responseTime !== null && m.responseTime !== undefined
+    )
+    
+    const totalResponseTime = monitorsWithResponseTime.reduce((acc: number, m) => acc + m.responseTime, 0)
+    const avgResponseTime = monitorsWithResponseTime.length > 0 
+      ? Math.floor(totalResponseTime / monitorsWithResponseTime.length)
+      : 0
+    
     stats.value = {
       totalMonitors: monitorsData.length,
-      activeCount: monitorsWithStatus.filter((m: any) => m.status === 'up').length,
-      downCount: monitorsWithStatus.filter((m: any) => m.status === 'down').length,
-      avgResponseTime: Math.floor(
-        monitorsWithStatus
-          .filter((m: any) => m.responseTime)
-          .reduce((acc: number, m: any) => acc + m.responseTime, 0) /
-        monitorsWithStatus.filter((m: any) => m.responseTime).length || 1
-      )
+      activeCount: monitorsWithStatus.filter(m => m.status === 'up').length,
+      downCount: monitorsWithStatus.filter(m => m.status === 'down').length,
+      avgResponseTime
     }
 
     try {
@@ -450,7 +491,12 @@ const fetchDashboardData = async (silent = false) => {
   }
 }
 
-const formatTime = (dateString: string | null) => {
+/**
+ * Format a date string to a human-readable format
+ * @param dateString - ISO date string, null, or undefined
+ * @returns Formatted date string or 'Never' if null/undefined
+ */
+const formatTime = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Never'
   try {
     return format(new Date(dateString), 'MMM dd, HH:mm')
@@ -459,7 +505,12 @@ const formatTime = (dateString: string | null) => {
   }
 }
 
-const getResponseTimeTooltip = (responseTime: number) => {
+/**
+ * Get tooltip text for response time with performance rating
+ * @param responseTime - Response time in milliseconds
+ * @returns Tooltip text with performance assessment
+ */
+const getResponseTimeTooltip = (responseTime: number): string => {
   if (responseTime < 100) {
     return `${responseTime}ms - Excellent! Very fast response time.`
   } else if (responseTime < 300) {
@@ -473,7 +524,12 @@ const getResponseTimeTooltip = (responseTime: number) => {
   }
 }
 
-const getStatusTooltip = (status: string | undefined) => {
+/**
+ * Get tooltip text for monitor status
+ * @param status - Monitor status
+ * @returns Tooltip text explaining the status
+ */
+const getStatusTooltip = (status: MonitorStatus | undefined): string => {
   switch (status) {
     case 'up':
       return 'Monitor is responding successfully and all checks are passing'
@@ -487,7 +543,11 @@ const getStatusTooltip = (status: string | undefined) => {
   }
 }
 
-const checkMonitor = async (monitorId: number) => {
+/**
+ * Manually check a specific monitor
+ * @param monitorId - ID of the monitor to check
+ */
+const checkMonitor = async (monitorId: number): Promise<void> => {
   try {
     // Add to checking set
     checkingMonitors.value.add(monitorId)
@@ -506,7 +566,10 @@ const checkMonitor = async (monitorId: number) => {
   }
 }
 
-const triggerManualCheck = async () => {
+/**
+ * Trigger manual check for all monitors
+ */
+const triggerManualCheck = async (): Promise<void> => {
   try {
     // Add all monitors to checking set
     monitors.value.forEach(monitor => {
@@ -523,25 +586,35 @@ const triggerManualCheck = async () => {
           checkingMonitors.value.clear()
         }, 2000)
       })
-      .catch((error: any) => {
+      .catch((error: Error) => {
         checkingMonitors.value.clear()
         alert(`Failed to trigger manual check: ${error.message}`)
       })
-  } catch (error: any) {
+  } catch (error) {
     checkingMonitors.value.clear()
-    alert(`Failed to trigger manual check: ${error.message}`)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    alert(`Failed to trigger manual check: ${errorMessage}`)
   }
 }
 
-const refreshData = () => {
+/**
+ * Refresh dashboard data (shows loading spinner)
+ */
+const refreshData = (): void => {
   fetchDashboardData()
 }
 
-const retryConnection = () => {
+/**
+ * Retry connection after error
+ */
+const retryConnection = (): void => {
   fetchDashboardData()
 }
 
-const updateRefreshInterval = () => {
+/**
+ * Update auto-refresh interval and save to localStorage
+ */
+const updateRefreshInterval = (): void => {
   // Save to localStorage
   localStorage.setItem('dashboardRefreshInterval', refreshIntervalSeconds.value.toString())
   
