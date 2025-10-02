@@ -128,21 +128,6 @@
               <p v-if="validationErrors.name" class="mt-1 text-sm text-red-600">{{ validationErrors.name }}</p>
             </div>
 
-            <!-- URL -->
-            <div>
-              <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL</label>
-              <input
-                id="url"
-                v-model="newMonitor.url"
-                type="url"
-                required
-                placeholder="https://example.com"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                :class="{ 'border-red-500': validationErrors.url }"
-              />
-              <p v-if="validationErrors.url" class="mt-1 text-sm text-red-600">{{ validationErrors.url }}</p>
-            </div>
-
             <!-- Type -->
             <div>
               <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
@@ -151,10 +136,52 @@
                 v-model="newMonitor.type"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               >
-                <option value="http">HTTP</option>
+                <option value="http">HTTP/HTTPS</option>
                 <option value="ping">Ping</option>
                 <option value="tcp">TCP Port</option>
               </select>
+              
+              <!-- Type-specific help text -->
+              <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-start gap-2">
+                  <i class="ti ti-info-circle text-blue-600 text-sm mt-0.5 flex-shrink-0"></i>
+                  <div class="text-xs text-blue-800">
+                    <p v-if="newMonitor.type === 'http'" class="font-medium mb-1">HTTP/HTTPS Monitoring</p>
+                    <p v-if="newMonitor.type === 'ping'" class="font-medium mb-1">Ping Monitoring</p>
+                    <p v-if="newMonitor.type === 'tcp'" class="font-medium mb-1">TCP Port Monitoring</p>
+                    
+                    <p v-if="newMonitor.type === 'http'" class="text-blue-700">
+                      Checks if your website is accessible via HTTP/HTTPS.<br>
+                      <span class="font-mono bg-blue-100 px-1 rounded">Example: https://example.com</span>
+                    </p>
+                    <p v-if="newMonitor.type === 'ping'" class="text-blue-700">
+                      Sends ICMP ping packets to check if server is reachable.<br>
+                      <span class="font-mono bg-blue-100 px-1 rounded">Example: example.com or 192.168.1.1</span>
+                    </p>
+                    <p v-if="newMonitor.type === 'tcp'" class="text-blue-700">
+                      Checks if a specific TCP port is open and accepting connections.<br>
+                      <span class="font-mono bg-blue-100 px-1 rounded">Example: example.com:3306 or 192.168.1.1:22</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- URL -->
+            <div>
+              <label for="url" class="block text-sm font-medium text-gray-700 mb-1">
+                {{ getUrlLabel }}
+              </label>
+              <input
+                id="url"
+                v-model="newMonitor.url"
+                type="text"
+                required
+                :placeholder="getUrlPlaceholder"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all font-mono text-sm"
+                :class="{ 'border-red-500': validationErrors.url }"
+              />
+              <p v-if="validationErrors.url" class="mt-1 text-sm text-red-600">{{ validationErrors.url }}</p>
             </div>
 
             <!-- Interval -->
@@ -237,7 +264,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import apiService from '@/services/api'
 
 interface Monitor {
@@ -266,6 +293,33 @@ const newMonitor = ref({
 })
 
 const validationErrors = ref<Record<string, string>>({})
+
+// Computed properties for dynamic labels and placeholders
+const getUrlLabel = computed(() => {
+  switch (newMonitor.value.type) {
+    case 'http':
+      return 'URL'
+    case 'ping':
+      return 'Hostname or IP Address'
+    case 'tcp':
+      return 'Host:Port'
+    default:
+      return 'URL'
+  }
+})
+
+const getUrlPlaceholder = computed(() => {
+  switch (newMonitor.value.type) {
+    case 'http':
+      return 'https://example.com'
+    case 'ping':
+      return 'example.com or 192.168.1.1'
+    case 'tcp':
+      return 'example.com:3306 or 192.168.1.1:22'
+    default:
+      return 'https://example.com'
+  }
+})
 
 const fetchMonitors = async () => {
   try {
