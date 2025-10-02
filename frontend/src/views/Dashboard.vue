@@ -236,12 +236,23 @@
               :key="monitor.id"
               class="relative bg-white border rounded-lg p-5 hover:shadow-md transition-all duration-200"
               :class="{
-                'border-l-4 border-l-green-500 bg-green-50/30': monitor.status === 'up',
-                'border-l-4 border-l-red-500 bg-red-50/30': monitor.status === 'down',
-                'border-l-4 border-l-yellow-500 bg-yellow-50/30': monitor.status === 'error',
-                'border-gray-200': !monitor.status || monitor.status === 'unknown'
+                'border-l-4 border-l-green-500 bg-green-50/30': monitor.status === 'up' && !checkingMonitors.has(monitor.id),
+                'border-l-4 border-l-red-500 bg-red-50/30': monitor.status === 'down' && !checkingMonitors.has(monitor.id),
+                'border-l-4 border-l-yellow-500 bg-yellow-50/30': monitor.status === 'error' && !checkingMonitors.has(monitor.id),
+                'border-l-4 border-l-purple-500 bg-purple-50/30 animate-pulse': checkingMonitors.has(monitor.id),
+                'border-gray-200': (!monitor.status || monitor.status === 'unknown') && !checkingMonitors.has(monitor.id)
               }"
             >
+              <!-- Checking overlay -->
+              <div 
+                v-if="checkingMonitors.has(monitor.id)"
+                class="absolute inset-0 bg-white/60 backdrop-blur-[2px] rounded-lg flex items-center justify-center z-10"
+              >
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-8 h-8 border-3 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                  <span class="text-xs font-medium text-purple-700">Checking...</span>
+                </div>
+              </div>
               <!-- Monitor Header -->
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-2">
@@ -354,6 +365,7 @@ const loading = ref(true)
 const isRefreshing = ref(false)
 const connectionError = ref('')
 const refreshIntervalSeconds = ref(30)
+const checkingMonitors = ref(new Set<number>())
 let refreshInterval: NodeJS.Timeout | null = null
 
 // Load saved refresh interval from localStorage
@@ -477,19 +489,46 @@ const getStatusTooltip = (status: string | undefined) => {
 
 const checkMonitor = async (monitorId: number) => {
   try {
+    // Add to checking set
+    checkingMonitors.value.add(monitorId)
+    
+    // Perform the check
     await apiService.checkMonitor(monitorId)
-    setTimeout(fetchDashboardData, 1000)
+    
+    // Wait a bit then refresh data silently
+    setTimeout(() => {
+      fetchDashboardData(true)
+      checkingMonitors.value.delete(monitorId)
+    }, 1000)
   } catch (error: any) {
+    checkingMonitors.value.delete(monitorId)
     alert(`Failed to check monitor: ${error.message}`)
   }
 }
 
 const triggerManualCheck = async () => {
   try {
-    loading.value = true
-    await apiService.triggerManualCheck()
-    setTimeout(fetchDashboardData, 2000)
+    // Add all monitors to checking set
+    monitors.value.forEach(monitor => {
+      checkingMonitors.value.add(monitor.id)
+    })
+    
+    // Trigger check all (runs in background)
+    apiService.triggerManualCheck()
+      .then(() => {
+        // Wait a bit then refresh data silently
+        setTimeout(() => {
+          fetchDashboardData(true)
+          // Clear all checking states
+          checkingMonitors.value.clear()
+        }, 2000)
+      })
+      .catch((error: any) => {
+        checkingMonitors.value.clear()
+        alert(`Failed to trigger manual check: ${error.message}`)
+      })
   } catch (error: any) {
+    checkingMonitors.value.clear()
     alert(`Failed to trigger manual check: ${error.message}`)
   }
 }
