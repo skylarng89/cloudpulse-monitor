@@ -100,7 +100,7 @@
                 </button>
               </td>
             </tr>
-            <tr v-for="monitor in filteredMonitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
+            <tr v-for="monitor in paginatedMonitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ monitor.name }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{{ monitor.url }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.type.toUpperCase() }}</td>
@@ -138,6 +138,48 @@
             </tr>
           </tbody>
         </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200">
+        <div class="text-sm text-gray-700">
+          {{ paginationInfo }}
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <i class="ti ti-chevron-left text-sm"></i>
+            Previous
+          </button>
+          
+          <div class="flex items-center gap-1">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              v-show="page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)"
+              @click="goToPage(page)"
+              class="inline-flex items-center justify-center w-10 h-10 border rounded-lg text-sm font-medium transition-colors"
+              :class="{
+                'bg-purple-600 text-white border-purple-600': page === currentPage,
+                'border-gray-300 text-gray-700 bg-white hover:bg-gray-50': page !== currentPage
+              }"
+            >
+              {{ page }}
+            </button>
+          </div>
+          
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+            <i class="ti ti-chevron-right text-sm"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -306,7 +348,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import apiService from '@/services/api'
 
 interface Monitor {
@@ -328,6 +370,8 @@ const connectionError = ref('')
 const deleteTarget = ref<Monitor | null>(null)
 const editingMonitor = ref<Monitor | null>(null)
 const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(20)
 
 const newMonitor = ref({
   name: '',
@@ -349,6 +393,38 @@ const filteredMonitors = computed(() => {
     monitor.name.toLowerCase().includes(query) ||
     monitor.url.toLowerCase().includes(query)
   )
+})
+
+// Paginated monitors
+const paginatedMonitors = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredMonitors.value.slice(start, end)
+})
+
+// Total pages
+const totalPages = computed(() => {
+  return Math.ceil(filteredMonitors.value.length / pageSize.value)
+})
+
+// Pagination info
+const paginationInfo = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value + 1
+  const end = Math.min(currentPage.value * pageSize.value, filteredMonitors.value.length)
+  const total = filteredMonitors.value.length
+  return `Showing ${start}-${end} of ${total}`
+})
+
+// Navigate to page
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+// Watch search query and reset to page 1
+watch(searchQuery, () => {
+  currentPage.value = 1
 })
 
 // Computed properties for dynamic labels and placeholders
