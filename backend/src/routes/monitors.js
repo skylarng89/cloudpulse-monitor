@@ -69,15 +69,34 @@ async function monitorRoutes(fastify, options) {
     }
   });
 
-  // Get monitor status/checks
-  fastify.get('/monitors/:id/checks', async (request, reply) => {
+  // Check all monitors manually (MUST be before /:id/check to avoid route conflict)
+  fastify.post('/monitors/check-all', async (request, reply) => {
     try {
-      const { id } = request.params;
-      const { limit } = request.query;
-      const checks = monitoringService.getMonitorChecks(parseInt(id), limit ? parseInt(limit) : 100);
-      return checks;
+      console.log('Check all monitors endpoint called');
+      const monitors = await monitorService.getAllMonitors();
+      console.log(`Found ${monitors.length} monitors to check`);
+      
+      if (monitors.length === 0) {
+        return {
+          success: true,
+          message: 'No monitors to check',
+          results: []
+        };
+      }
+
+      // Check all monitors
+      console.log('Starting to check all monitors...');
+      const results = await monitoringService.checkAllMonitors(monitors);
+      console.log('All monitors checked successfully');
+      
+      return {
+        success: true,
+        message: `Checked ${monitors.length} monitor(s)`,
+        results: results
+      };
     } catch (error) {
-      reply.code(500).send({ error: error.message });
+      console.error('Error in check-all endpoint:', error);
+      reply.code(500).send({ error: error.message, stack: error.stack });
     }
   });
 
@@ -103,27 +122,13 @@ async function monitorRoutes(fastify, options) {
     }
   });
 
-  // Check all monitors manually
-  fastify.post('/monitors/check-all', async (request, reply) => {
+  // Get monitor status/checks
+  fastify.get('/monitors/:id/checks', async (request, reply) => {
     try {
-      const monitors = monitorService.getAllMonitors();
-      
-      if (monitors.length === 0) {
-        return {
-          success: true,
-          message: 'No monitors to check',
-          results: []
-        };
-      }
-
-      // Check all monitors
-      const results = await monitoringService.checkAllMonitors(monitors);
-      
-      return {
-        success: true,
-        message: `Checked ${monitors.length} monitor(s)`,
-        results: results
-      };
+      const { id } = request.params;
+      const { limit } = request.query;
+      const checks = monitoringService.getMonitorChecks(parseInt(id), limit ? parseInt(limit) : 100);
+      return checks;
     } catch (error) {
       reply.code(500).send({ error: error.message });
     }
