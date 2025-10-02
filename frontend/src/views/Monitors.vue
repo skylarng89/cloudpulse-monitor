@@ -9,13 +9,34 @@
         </h1>
         <p class="mt-1 text-sm text-gray-600">Manage your monitoring endpoints</p>
       </div>
-      <button 
-        @click="showAddForm = true"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-sm"
-      >
-        <i class="ti ti-plus"></i>
-        Add Monitor
-      </button>
+      <div class="flex items-center gap-3">
+        <!-- Search Bar -->
+        <div class="relative max-w-xs w-full">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="ti ti-search text-gray-400"></i>
+          </div>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search monitors..."
+            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+          />
+          <button
+            v-if="searchQuery"
+            @click="searchQuery = ''"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <i class="ti ti-x text-gray-400 hover:text-gray-600"></i>
+          </button>
+        </div>
+        <button 
+          @click="showAddForm = true"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-sm flex-shrink-0"
+        >
+          <i class="ti ti-plus"></i>
+          Add Monitor
+        </button>
+      </div>
     </div>
 
     <!-- Connection Error -->
@@ -65,7 +86,21 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="monitor in monitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
+            <tr v-if="filteredMonitors.length === 0">
+              <td colspan="6" class="px-6 py-12 text-center">
+                <i class="ti ti-search-off text-gray-300 text-6xl"></i>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">No monitors found</h3>
+                <p class="mt-2 text-sm text-gray-600">Try adjusting your search query</p>
+                <button
+                  @click="searchQuery = ''"
+                  class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <i class="ti ti-x"></i>
+                  Clear Search
+                </button>
+              </td>
+            </tr>
+            <tr v-for="monitor in filteredMonitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ monitor.name }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{{ monitor.url }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.type.toUpperCase() }}</td>
@@ -85,6 +120,13 @@
                     <i class="ti ti-refresh text-sm"></i>
                   </button>
                   <button 
+                    @click="startEdit(monitor)"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                    title="Edit"
+                  >
+                    <i class="ti ti-edit text-sm"></i>
+                  </button>
+                  <button 
                     @click="confirmDelete(monitor)"
                     class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors"
                     title="Delete"
@@ -99,14 +141,14 @@
       </div>
     </div>
 
-    <!-- Add Monitor Modal -->
+    <!-- Add/Edit Monitor Modal -->
     <div v-if="showAddForm" class="fixed inset-0 z-50 overflow-y-auto" @click="showAddForm = false">
       <div class="flex min-h-screen items-center justify-center p-4">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
         
         <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all" @click.stop>
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Add New Monitor</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ editingMonitor ? 'Edit Monitor' : 'Add New Monitor' }}</h3>
             <button @click="showAddForm = false" class="text-gray-400 hover:text-gray-500">
               <i class="ti ti-x text-xl"></i>
             </button>
@@ -216,7 +258,7 @@
                 class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-colors"
               >
                 <i class="ti ti-check"></i>
-                {{ submitting ? 'Adding...' : 'Add Monitor' }}
+                {{ submitting ? (editingMonitor ? 'Updating...' : 'Adding...') : (editingMonitor ? 'Update Monitor' : 'Add Monitor') }}
               </button>
             </div>
           </form>
@@ -284,6 +326,8 @@ const submitting = ref(false)
 const deleting = ref(false)
 const connectionError = ref('')
 const deleteTarget = ref<Monitor | null>(null)
+const editingMonitor = ref<Monitor | null>(null)
+const searchQuery = ref('')
 
 const newMonitor = ref({
   name: '',
@@ -293,6 +337,19 @@ const newMonitor = ref({
 })
 
 const validationErrors = ref<Record<string, string>>({})
+
+// Filtered monitors based on search query
+const filteredMonitors = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return monitors.value
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  return monitors.value.filter(monitor => 
+    monitor.name.toLowerCase().includes(query) ||
+    monitor.url.toLowerCase().includes(query)
+  )
+})
 
 // Computed properties for dynamic labels and placeholders
 const getUrlLabel = computed(() => {
@@ -404,24 +461,46 @@ const addMonitor = async () => {
 
   try {
     submitting.value = true
-    await apiService.createMonitor(newMonitor.value)
+    
+    if (editingMonitor.value) {
+      // Update existing monitor
+      await apiService.updateMonitor(editingMonitor.value.id, newMonitor.value)
+    } else {
+      // Create new monitor
+      await apiService.createMonitor(newMonitor.value)
+    }
+    
     newMonitor.value = { name: '', url: '', type: 'http', interval_seconds: 60 }
     showAddForm.value = false
+    editingMonitor.value = null
     validationErrors.value = {}
     await fetchMonitors()
   } catch (error: any) {
     if (error.message.includes('already exists')) {
       validationErrors.value.name = error.message
     } else {
-      alert(`Failed to create monitor: ${error.message}`)
+      const action = editingMonitor.value ? 'update' : 'create'
+      alert(`Failed to ${action} monitor: ${error.message}`)
     }
   } finally {
     submitting.value = false
   }
 }
 
+const startEdit = (monitor: Monitor) => {
+  editingMonitor.value = monitor
+  newMonitor.value = {
+    name: monitor.name,
+    url: monitor.url,
+    type: monitor.type,
+    interval_seconds: monitor.interval_seconds
+  }
+  showAddForm.value = true
+}
+
 const cancelAdd = () => {
   showAddForm.value = false
+  editingMonitor.value = null
   newMonitor.value = { name: '', url: '', type: 'http', interval_seconds: 60 }
   validationErrors.value = {}
 }

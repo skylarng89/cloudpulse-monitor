@@ -208,10 +208,31 @@
       <!-- Monitor Status -->
       <div class="bg-white shadow-sm rounded-lg border border-gray-200">
         <div class="px-6 py-5 border-b border-gray-200">
-          <h2 class="text-lg font-medium text-gray-900 flex items-center gap-2">
-            <i class="ti ti-activity text-purple-600"></i>
-            Monitor Status
-          </h2>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h2 class="text-lg font-medium text-gray-900 flex items-center gap-2">
+              <i class="ti ti-activity text-purple-600"></i>
+              Monitor Status
+            </h2>
+            <!-- Search Bar -->
+            <div class="relative max-w-xs w-full">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="ti ti-search text-gray-400"></i>
+              </div>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search monitors..."
+                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              />
+              <button
+                v-if="searchQuery"
+                @click="searchQuery = ''"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <i class="ti ti-x text-gray-400 hover:text-gray-600"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->
@@ -230,9 +251,23 @@
 
         <!-- Monitors Grid -->
         <div v-else class="p-6">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <!-- No Results -->
+          <div v-if="filteredMonitors.length === 0" class="text-center py-12">
+            <i class="ti ti-search-off text-gray-300 text-6xl"></i>
+            <h3 class="mt-4 text-lg font-medium text-gray-900">No monitors found</h3>
+            <p class="mt-2 text-sm text-gray-600">Try adjusting your search query</p>
+            <button
+              @click="searchQuery = ''"
+              class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <i class="ti ti-x"></i>
+              Clear Search
+            </button>
+          </div>
+          
+          <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div
-              v-for="monitor in monitors"
+              v-for="monitor in filteredMonitors"
               :key="monitor.id"
               class="relative bg-white border rounded-lg p-5 hover:shadow-md transition-all duration-200"
               :class="{
@@ -311,16 +346,18 @@
                 <button 
                   @click="checkMonitor(monitor.id)"
                   class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                  title="Run check now"
                 >
                   <i class="ti ti-refresh text-sm"></i>
                   Check Now
                 </button>
                 <router-link 
-                  :to="`/monitors/${monitor.id}`"
+                  to="/monitors"
                   class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                  title="Edit monitor settings"
                 >
-                  <i class="ti ti-eye text-sm"></i>
-                  Details
+                  <i class="ti ti-edit text-sm"></i>
+                  Edit
                 </router-link>
               </div>
             </div>
@@ -392,6 +429,7 @@ const isRefreshing = ref(false)
 const connectionError = ref('')
 const refreshIntervalSeconds = ref(30)
 const checkingMonitors = ref(new Set<number>())
+const searchQuery = ref('')
 let refreshInterval: NodeJS.Timeout | null = null
 
 /**
@@ -419,6 +457,22 @@ const getRefreshLabel = computed((): string => {
     const minutes = seconds / 60
     return `${minutes} min${minutes > 1 ? 's' : ''}`
   }
+})
+
+/**
+ * Computed property for filtered monitors based on search query
+ * @returns Filtered array of monitors
+ */
+const filteredMonitors = computed((): Monitor[] => {
+  if (!searchQuery.value.trim()) {
+    return monitors.value
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  return monitors.value.filter(monitor => 
+    monitor.name.toLowerCase().includes(query) ||
+    monitor.url.toLowerCase().includes(query)
+  )
 })
 
 /**
