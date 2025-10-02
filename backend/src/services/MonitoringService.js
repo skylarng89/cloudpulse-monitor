@@ -1,5 +1,6 @@
 const HTTPMonitorService = require('./HTTPMonitorService');
 const PingMonitorService = require('./PingMonitorService');
+const TCPMonitorService = require('./TCPMonitorService');
 
 /**
  * Unified Monitoring Service
@@ -10,6 +11,7 @@ class MonitoringService {
     this.db = db;
     this.httpService = new HTTPMonitorService(db);
     this.pingService = new PingMonitorService(db);
+    this.tcpService = new TCPMonitorService(db);
   }
 
   /**
@@ -28,8 +30,7 @@ class MonitoringService {
           return await this.pingService.performCheck(monitor);
 
         case 'tcp':
-          // TCP checks would go here in the future
-          throw new Error(`TCP monitoring not yet implemented for monitor: ${monitor.name}`);
+          return await this.tcpService.performCheck(monitor);
 
         default:
           throw new Error(`Unknown monitor type: ${monitor.type}`);
@@ -158,8 +159,7 @@ class MonitoringService {
           return this.pingService.validateHost(monitor.url);
 
         case 'tcp':
-          // TCP validation would go here
-          throw new Error('TCP validation not yet implemented');
+          return this.tcpService.validateHostPort(monitor.url);
 
         default:
           throw new Error(`Unknown monitor type: ${monitor.type}`);
