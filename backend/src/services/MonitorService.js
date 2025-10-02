@@ -33,17 +33,15 @@ class MonitorService {
       // Validate monitor data
       this.validateMonitorData(monitorData);
 
-      // Check for duplicate names
-      const existingMonitor = this.findMonitorByName(monitorData.name);
-      if (existingMonitor) {
-        throw new Error(`Monitor with name "${monitorData.name}" already exists`);
-      }
-
       // Create monitor in database using static method
       const monitor = Monitor.create(this.db, monitorData);
 
       return monitor;
     } catch (error) {
+      // Handle unique constraint violation
+      if (error.message.includes('UNIQUE constraint failed')) {
+        throw new Error(`A monitor with URL "${monitorData.url}" and type "${monitorData.type}" already exists`);
+      }
       throw new Error(`Failed to create monitor: ${error.message}`);
     }
   }
@@ -89,6 +87,10 @@ class MonitorService {
       const monitor = Monitor.update(this.db, id, monitorData);
       return monitor;
     } catch (error) {
+      // Handle unique constraint violation
+      if (error.message.includes('UNIQUE constraint failed')) {
+        throw new Error(`A monitor with URL "${monitorData.url}" and type "${monitorData.type}" already exists`);
+      }
       throw new Error(`Failed to update monitor ${id}: ${error.message}`);
     }
   }

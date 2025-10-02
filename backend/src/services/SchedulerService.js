@@ -1,13 +1,13 @@
 const cron = require('node-cron');
 const Monitor = require('../models/Monitor');
-const HTTPMonitorService = require('./HTTPMonitorService');
+const MonitoringService = require('./MonitoringService');
 
 class SchedulerService {
   constructor(db) {
     this.db = db;
     this.scheduledJobs = new Map();
     this.isRunning = false;
-    this.httpMonitorService = new HTTPMonitorService(db);
+    this.monitoringService = new MonitoringService(db);
     this.stats = {
       totalChecks: 0,
       lastCheck: null,
@@ -70,16 +70,26 @@ class SchedulerService {
   scheduleMonitorCheck(monitor) {
     try {
       const intervalSeconds = monitor.interval_seconds || 60;
-      const cronExpression = `*/${Math.floor(intervalSeconds / 60)} * * * * *`;
-
-      const job = cron.schedule(cronExpression, async () => {
+      
+      // Use setInterval instead of cron for precise second-based intervals
+      const intervalMs = intervalSeconds * 1000;
+      
+      // Create a wrapper object that mimics cron job interface
+      const intervalId = setInterval(async () => {
         await this.runMonitorCheck(monitor.id);
-      }, {
-        scheduled: false
-      });
+      }, intervalMs);
+      
+      // Create job object with start/stop methods to match cron interface
+      const job = {
+        intervalId: intervalId,
+        stop: () => clearInterval(intervalId),
+        start: () => {} // Already started
+      };
 
       this.scheduledJobs.set(monitor.id, job);
-      job.start();
+      
+      // Run initial check immediately
+      this.runMonitorCheck(monitor.id);
 
       console.log(`Scheduled monitor ${monitor.id} (${monitor.name}) every ${intervalSeconds} seconds`);
     } catch (error) {
@@ -116,10 +126,10 @@ class SchedulerService {
       this.stats.totalChecks++;
       this.stats.lastCheck = new Date();
 
-      // Use HTTPMonitorService to perform actual HTTP check
-      const checkResult = await this.httpMonitorService.performCheck(monitor);
+      // Use MonitoringService to perform check (supports HTTP, Ping, TCP)
+      const checkResult = await this.monitoringService.performCheck(monitor);
 
-      console.log(`Checked monitor ${monitorId} (${monitor.name}): ${checkResult.status.toUpperCase()} - ${checkResult.response_time}ms`);
+      console.log(`Checked monitor ${monitorId} (${monitor.name}): ${checkResult.status.toUpperCase()} - ${checkResult.response_time || 'N/A'}ms`);
 
       return checkResult;
 

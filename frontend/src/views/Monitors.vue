@@ -9,13 +9,44 @@
         </h1>
         <p class="mt-1 text-sm text-gray-600">Manage your monitoring endpoints</p>
       </div>
-      <button 
-        @click="showAddForm = true"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-sm"
-      >
-        <i class="ti ti-plus"></i>
-        Add Monitor
-      </button>
+      <div class="flex items-center gap-3">
+        <!-- Bulk Delete Button -->
+        <button
+          v-if="selectedMonitors.size > 0"
+          @click="confirmBulkDelete"
+          class="w-full text-center inline-flex items-center gap-2 px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-sm"
+        >
+          <i class="ti ti-trash"></i>
+          Delete Selected ({{ selectedMonitors.size }})
+        </button>
+        
+        <!-- Search Bar -->
+        <div class="relative max-w-xs w-full">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="ti ti-search text-gray-400"></i>
+          </div>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search monitors..."
+            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+          />
+          <button
+            v-if="searchQuery"
+            @click="searchQuery = ''"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <i class="ti ti-x text-gray-400 hover:text-gray-600"></i>
+          </button>
+        </div>
+        <button 
+          @click="showAddForm = true"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 shadow-sm flex-shrink-0"
+        >
+          <i class="ti ti-plus"></i>
+          Add Monitor
+        </button>
+      </div>
     </div>
 
     <!-- Connection Error -->
@@ -56,6 +87,15 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
+              <th scope="col" class="px-6 py-3 text-left">
+                <input
+                  type="checkbox"
+                  :checked="isAllSelected"
+                  @change="toggleSelectAll"
+                  class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
+                  title="Select all monitors"
+                />
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -65,14 +105,44 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="monitor in monitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
+            <tr v-if="filteredMonitors.length === 0">
+              <td colspan="7" class="px-6 py-12 text-center">
+                <i class="ti ti-search-off text-gray-300 text-6xl"></i>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">No monitors found</h3>
+                <p class="mt-2 text-sm text-gray-600">Try adjusting your search query</p>
+                <button
+                  @click="searchQuery = ''"
+                  class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <i class="ti ti-x"></i>
+                  Clear Search
+                </button>
+              </td>
+            </tr>
+            <tr v-for="monitor in paginatedMonitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  :checked="selectedMonitors.has(monitor.id)"
+                  @change="toggleMonitorSelection(monitor.id)"
+                  class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
+                />
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ monitor.name }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{{ monitor.url }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.type.toUpperCase() }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.interval_seconds }}s</td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  Unknown
+                <span 
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase"
+                  :class="{
+                    'bg-green-100 text-green-800': monitor.status === 'up',
+                    'bg-red-100 text-red-800': monitor.status === 'down',
+                    'bg-yellow-100 text-yellow-800': monitor.status === 'error',
+                    'bg-gray-100 text-gray-800': !monitor.status || monitor.status === 'unknown'
+                  }"
+                >
+                  {{ monitor.status || 'unknown' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -83,6 +153,13 @@
                     title="Check Now"
                   >
                     <i class="ti ti-refresh text-sm"></i>
+                  </button>
+                  <button 
+                    @click="startEdit(monitor)"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                    title="Edit"
+                  >
+                    <i class="ti ti-edit text-sm"></i>
                   </button>
                   <button 
                     @click="confirmDelete(monitor)"
@@ -97,16 +174,58 @@
           </tbody>
         </table>
       </div>
+      
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200">
+        <div class="text-sm text-gray-700">
+          {{ paginationInfo }}
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <i class="ti ti-chevron-left text-sm"></i>
+            Previous
+          </button>
+          
+          <div class="flex items-center gap-1">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              v-show="page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)"
+              @click="goToPage(page)"
+              class="inline-flex items-center justify-center w-10 h-10 border rounded-lg text-sm font-medium transition-colors"
+              :class="{
+                'bg-purple-600 text-white border-purple-600': page === currentPage,
+                'border-gray-300 text-gray-700 bg-white hover:bg-gray-50': page !== currentPage
+              }"
+            >
+              {{ page }}
+            </button>
+          </div>
+          
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+            <i class="ti ti-chevron-right text-sm"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Add Monitor Modal -->
+    <!-- Add/Edit Monitor Modal -->
     <div v-if="showAddForm" class="fixed inset-0 z-50 overflow-y-auto" @click="showAddForm = false">
       <div class="flex min-h-screen items-center justify-center p-4">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
         
         <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all" @click.stop>
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Add New Monitor</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ editingMonitor ? 'Edit Monitor' : 'Add New Monitor' }}</h3>
             <button @click="showAddForm = false" class="text-gray-400 hover:text-gray-500">
               <i class="ti ti-x text-xl"></i>
             </button>
@@ -216,7 +335,7 @@
                 class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-colors"
               >
                 <i class="ti ti-check"></i>
-                {{ submitting ? 'Adding...' : 'Add Monitor' }}
+                {{ submitting ? (editingMonitor ? 'Updating...' : 'Adding...') : (editingMonitor ? 'Update Monitor' : 'Add Monitor') }}
               </button>
             </div>
           </form>
@@ -264,8 +383,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import apiService from '@/services/api'
+import { ref, computed, watch, onMounted } from 'vue'
+import apiService from '@/services/api.js'
+import { useToast } from '@/composables/useToast'
 
 interface Monitor {
   id: number
@@ -273,8 +393,12 @@ interface Monitor {
   url: string
   type: string
   interval_seconds: number
-  active: boolean
-  created_at: string
+  timeout_seconds?: number
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
+  status?: string
+  lastCheck?: string | null
 }
 
 const monitors = ref<Monitor[]>([])
@@ -284,6 +408,12 @@ const submitting = ref(false)
 const deleting = ref(false)
 const connectionError = ref('')
 const deleteTarget = ref<Monitor | null>(null)
+const editingMonitor = ref<Monitor | null>(null)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(20)
+const selectedMonitors = ref(new Set<number>())
+const { error: showError, success: showSuccess } = useToast()
 
 const newMonitor = ref({
   name: '',
@@ -293,6 +423,77 @@ const newMonitor = ref({
 })
 
 const validationErrors = ref<Record<string, string>>({})
+
+// Filtered monitors based on search query
+const filteredMonitors = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return monitors.value
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  return monitors.value.filter(monitor => 
+    monitor.name.toLowerCase().includes(query) ||
+    monitor.url.toLowerCase().includes(query)
+  )
+})
+
+// Paginated monitors
+const paginatedMonitors = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredMonitors.value.slice(start, end)
+})
+
+// Total pages
+const totalPages = computed(() => {
+  return Math.ceil(filteredMonitors.value.length / pageSize.value)
+})
+
+// Pagination info
+const paginationInfo = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value + 1
+  const end = Math.min(currentPage.value * pageSize.value, filteredMonitors.value.length)
+  const total = filteredMonitors.value.length
+  return `Showing ${start}-${end} of ${total}`
+})
+
+// Navigate to page
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+// Watch search query and reset to page 1
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+// Check if all visible monitors are selected
+const isAllSelected = computed(() => {
+  if (paginatedMonitors.value.length === 0) return false
+  return paginatedMonitors.value.every(m => selectedMonitors.value.has(m.id))
+})
+
+// Toggle individual monitor selection
+const toggleMonitorSelection = (monitorId: number) => {
+  if (selectedMonitors.value.has(monitorId)) {
+    selectedMonitors.value.delete(monitorId)
+  } else {
+    selectedMonitors.value.add(monitorId)
+  }
+}
+
+// Toggle select all on current page
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    // Deselect all on current page
+    paginatedMonitors.value.forEach(m => selectedMonitors.value.delete(m.id))
+  } else {
+    // Select all on current page
+    paginatedMonitors.value.forEach(m => selectedMonitors.value.add(m.id))
+  }
+}
 
 // Computed properties for dynamic labels and placeholders
 const getUrlLabel = computed(() => {
@@ -325,8 +526,30 @@ const fetchMonitors = async () => {
   try {
     loading.value = true
     connectionError.value = ''
-    const data = await apiService.getMonitors()
-    monitors.value = data
+    const monitorsData = await apiService.getMonitors()
+    
+    // Fetch latest check status for each monitor
+    const monitorsWithStatus = await Promise.all(
+      monitorsData.map(async (monitor: Monitor) => {
+        try {
+          const checks = await apiService.getMonitorChecks(monitor.id, { limit: 1 })
+          const latestCheck = checks[0]
+          return {
+            ...monitor,
+            status: latestCheck?.status || 'unknown',
+            lastCheck: latestCheck?.checked_at
+          }
+        } catch (error) {
+          return {
+            ...monitor,
+            status: 'unknown',
+            lastCheck: null
+          }
+        }
+      })
+    )
+    
+    monitors.value = monitorsWithStatus
   } catch (error: any) {
     connectionError.value = error.message || 'Failed to connect to backend'
   } finally {
@@ -404,24 +627,47 @@ const addMonitor = async () => {
 
   try {
     submitting.value = true
-    await apiService.createMonitor(newMonitor.value)
+    
+    if (editingMonitor.value) {
+      // Update existing monitor
+      await apiService.updateMonitor(editingMonitor.value.id, newMonitor.value)
+    } else {
+      // Create new monitor
+      await apiService.createMonitor(newMonitor.value)
+    }
+    
     newMonitor.value = { name: '', url: '', type: 'http', interval_seconds: 60 }
     showAddForm.value = false
+    editingMonitor.value = null
     validationErrors.value = {}
     await fetchMonitors()
   } catch (error: any) {
     if (error.message.includes('already exists')) {
-      validationErrors.value.name = error.message
+      // Show error in the URL field since it's a URL+type duplicate
+      validationErrors.value.url = error.message
     } else {
-      alert(`Failed to create monitor: ${error.message}`)
+      const action = editingMonitor.value ? 'update' : 'create'
+      showError(`Failed to ${action} monitor: ${error.message}`)
     }
   } finally {
     submitting.value = false
   }
 }
 
+const startEdit = (monitor: Monitor) => {
+  editingMonitor.value = monitor
+  newMonitor.value = {
+    name: monitor.name,
+    url: monitor.url,
+    type: monitor.type,
+    interval_seconds: monitor.interval_seconds
+  }
+  showAddForm.value = true
+}
+
 const cancelAdd = () => {
   showAddForm.value = false
+  editingMonitor.value = null
   newMonitor.value = { name: '', url: '', type: 'http', interval_seconds: 60 }
   validationErrors.value = {}
 }
@@ -438,8 +684,40 @@ const deleteMonitor = async () => {
     await apiService.deleteMonitor(deleteTarget.value.id)
     await fetchMonitors()
     deleteTarget.value = null
+    showSuccess('Monitor deleted successfully')
   } catch (error: any) {
-    alert(`Failed to delete monitor: ${error.message}`)
+    showError(`Failed to delete monitor: ${error.message}`)
+  } finally {
+    deleting.value = false
+  }
+}
+
+const confirmBulkDelete = () => {
+  if (selectedMonitors.value.size === 0) return
+  
+  const count = selectedMonitors.value.size
+  if (confirm(`Are you sure you want to delete ${count} monitor(s)? This action cannot be undone.`)) {
+    deleteBulkMonitors()
+  }
+}
+
+const deleteBulkMonitors = async () => {
+  if (selectedMonitors.value.size === 0) return
+
+  try {
+    deleting.value = true
+    const deletePromises = Array.from(selectedMonitors.value).map(id => 
+      apiService.deleteMonitor(id)
+    )
+    
+    await Promise.all(deletePromises)
+    
+    const count = selectedMonitors.value.size
+    selectedMonitors.value.clear()
+    await fetchMonitors()
+    showSuccess(`Successfully deleted ${count} monitor(s)`)
+  } catch (error: any) {
+    showError(`Failed to delete monitors: ${error.message}`)
   } finally {
     deleting.value = false
   }
@@ -450,7 +728,7 @@ const checkMonitor = async (monitorId: number) => {
     await apiService.checkMonitor(monitorId)
     setTimeout(fetchMonitors, 1000)
   } catch (error: any) {
-    alert(`Failed to check monitor: ${error.message}`)
+    showError(`Failed to check monitor: ${error.message}`)
   }
 }
 

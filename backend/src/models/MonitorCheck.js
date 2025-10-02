@@ -19,7 +19,7 @@ class MonitorCheck {
    * @returns {MonitorCheck} MonitorCheck instance
    */
   static fromRow(row) {
-    return new MonitorCheck({
+    const check = new MonitorCheck({
       id: row.id,
       monitor_id: row.monitor_id,
       status_code: row.status_code,
@@ -28,6 +28,20 @@ class MonitorCheck {
       error_message: row.error_message,
       checked_at: row.checked_at
     });
+    
+    // Add status field for frontend compatibility
+    if (row.error_message && row.is_up === 0) {
+      check.status = 'error';
+    } else if (row.is_up === 1) {
+      check.status = 'up';
+    } else {
+      check.status = 'down';
+    }
+    
+    // Add response_time for frontend compatibility
+    check.response_time = row.response_time_ms;
+    
+    return check;
   }
 
   /**

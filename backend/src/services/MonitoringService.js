@@ -1,5 +1,6 @@
 const HTTPMonitorService = require('./HTTPMonitorService');
 const PingMonitorService = require('./PingMonitorService');
+const TCPMonitorService = require('./TCPMonitorService');
 
 /**
  * Unified Monitoring Service
@@ -10,6 +11,7 @@ class MonitoringService {
     this.db = db;
     this.httpService = new HTTPMonitorService(db);
     this.pingService = new PingMonitorService(db);
+    this.tcpService = new TCPMonitorService(db);
   }
 
   /**
@@ -28,8 +30,7 @@ class MonitoringService {
           return await this.pingService.performCheck(monitor);
 
         case 'tcp':
-          // TCP checks would go here in the future
-          throw new Error(`TCP monitoring not yet implemented for monitor: ${monitor.name}`);
+          return await this.tcpService.performCheck(monitor);
 
         default:
           throw new Error(`Unknown monitor type: ${monitor.type}`);
@@ -103,6 +104,22 @@ class MonitoringService {
   }
 
   /**
+   * Gets monitor checks for a specific monitor
+   * @param {number} monitorId - Monitor ID
+   * @param {number} limit - Maximum number of checks to return (default: 100)
+   * @returns {Array} Array of check results
+   */
+  getMonitorChecks(monitorId, limit = 100) {
+    try {
+      const MonitorCheck = require('../models/MonitorCheck');
+      const checks = MonitorCheck.findByMonitorId(this.db, monitorId, limit);
+      return checks;
+    } catch (error) {
+      throw new Error(`Failed to get monitor checks: ${error.message}`);
+    }
+  }
+
+  /**
    * Gets monitoring statistics
    * @param {number} hours - Hours to look back (default: 24)
    * @returns {Object} Monitoring statistics
@@ -142,8 +159,7 @@ class MonitoringService {
           return this.pingService.validateHost(monitor.url);
 
         case 'tcp':
-          // TCP validation would go here
-          throw new Error('TCP validation not yet implemented');
+          return this.tcpService.validateHostPort(monitor.url);
 
         default:
           throw new Error(`Unknown monitor type: ${monitor.type}`);
