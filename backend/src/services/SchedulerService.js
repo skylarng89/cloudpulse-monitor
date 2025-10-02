@@ -1,11 +1,13 @@
 const cron = require('node-cron');
 const { Monitor } = require('../models/Monitor');
+const HTTPMonitorService = require('./HTTPMonitorService');
 
 class SchedulerService {
   constructor(db) {
     this.db = db;
     this.scheduledJobs = new Map();
     this.isRunning = false;
+    this.httpMonitorService = new HTTPMonitorService(db);
     this.stats = {
       totalChecks: 0,
       lastCheck: null,
@@ -88,32 +90,27 @@ class SchedulerService {
 
   async runMonitorCheck(monitorId) {
     try {
-      const MonitorCheck = require('../models/MonitorCheck');
       const monitor = Monitor.findById(this.db, monitorId);
 
       if (!monitor || !monitor.is_active) {
+        console.log(`Skipping inactive or non-existent monitor ${monitorId}`);
         return;
       }
 
       this.stats.totalChecks++;
       this.stats.lastCheck = new Date();
 
-      const isUp = Math.random() > 0.1;
-      const responseTime = Math.floor(Math.random() * 1000) + 100;
+      // Use HTTPMonitorService to perform actual HTTP check
+      const checkResult = await this.httpMonitorService.performCheck(monitor);
 
-      MonitorCheck.create(this.db, {
-        monitor_id: monitorId,
-        status_code: isUp ? 200 : 500,
-        response_time_ms: responseTime,
-        is_up: isUp,
-        error_message: isUp ? null : 'Simulated service unavailable'
-      });
+      console.log(`Checked monitor ${monitorId} (${monitor.name}): ${checkResult.status.toUpperCase()} - ${checkResult.response_time}ms`);
 
-      console.log(`Checked monitor ${monitorId}: ${isUp ? 'UP' : 'DOWN'} (${responseTime}ms)`);
+      return checkResult;
 
     } catch (error) {
       this.stats.errors++;
       console.error(`Error checking monitor ${monitorId}:`, error);
+      throw error;
     }
   }
 

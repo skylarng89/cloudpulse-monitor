@@ -89,6 +89,14 @@ const start = async () => {
   try {
     await fastify.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' });
     console.log(`Server listening on port ${process.env.PORT || 3000}`);
+    
+    // Auto-start scheduler for monitoring
+    try {
+      await schedulerService.start();
+      console.log('✅ Scheduler started automatically');
+    } catch (error) {
+      console.warn('⚠️ Failed to auto-start scheduler:', error.message);
+    }
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
@@ -98,6 +106,14 @@ const start = async () => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down gracefully...');
+  try {
+    if (schedulerService.isRunning) {
+      await schedulerService.stop();
+      console.log('✅ Scheduler stopped');
+    }
+  } catch (error) {
+    console.warn('⚠️ Error stopping scheduler:', error.message);
+  }
   await fastify.close();
   db.close();
   process.exit(0);
@@ -105,6 +121,14 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
   console.log('Shutting down gracefully...');
+  try {
+    if (schedulerService.isRunning) {
+      await schedulerService.stop();
+      console.log('✅ Scheduler stopped');
+    }
+  } catch (error) {
+    console.warn('⚠️ Error stopping scheduler:', error.message);
+  }
   await fastify.close();
   db.close();
   process.exit(0);

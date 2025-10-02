@@ -90,8 +90,16 @@ class HTTPMonitorService {
 
     // Save check result to database
     try {
-      const check = new MonitorCheck(checkResult);
-      check.save(this.db);
+      // Map checkResult to database format
+      const dbCheckData = {
+        monitor_id: checkResult.monitor_id,
+        status_code: checkResult.status_code,
+        response_time_ms: checkResult.response_time,
+        is_up: checkResult.status === 'up' ? 1 : 0,
+        error_message: checkResult.error_message
+      };
+      
+      MonitorCheck.create(this.db, dbCheckData);
     } catch (dbError) {
       console.error(`Failed to save check result for monitor ${monitor.id}:`, dbError.message);
     }
