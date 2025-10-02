@@ -321,9 +321,10 @@ const fetchDashboardData = async () => {
             lastCheck: latestCheck?.checked_at
           }
         } catch (error) {
+          console.warn(`Could not fetch checks for monitor ${monitor.id}:`, error)
           return {
             ...monitor,
-            status: 'error',
+            status: 'unknown',
             responseTime: null,
             lastCheck: null
           }

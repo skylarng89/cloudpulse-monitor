@@ -73,7 +73,8 @@ async function monitorRoutes(fastify, options) {
   fastify.get('/monitors/:id/checks', async (request, reply) => {
     try {
       const { id } = request.params;
-      const checks = monitoringService.getMonitorChecks(parseInt(id));
+      const { limit } = request.query;
+      const checks = monitoringService.getMonitorChecks(parseInt(id), limit ? parseInt(limit) : 100);
       return checks;
     } catch (error) {
       reply.code(500).send({ error: error.message });

@@ -103,6 +103,22 @@ class MonitoringService {
   }
 
   /**
+   * Gets monitor checks for a specific monitor
+   * @param {number} monitorId - Monitor ID
+   * @param {number} limit - Maximum number of checks to return (default: 100)
+   * @returns {Array} Array of check results
+   */
+  getMonitorChecks(monitorId, limit = 100) {
+    try {
+      const MonitorCheck = require('../models/MonitorCheck');
+      const checks = MonitorCheck.findByMonitorId(this.db, monitorId, limit);
+      return checks;
+    } catch (error) {
+      throw new Error(`Failed to get monitor checks: ${error.message}`);
+    }
+  }
+
+  /**
    * Gets monitoring statistics
    * @param {number} hours - Hours to look back (default: 24)
    * @returns {Object} Monitoring statistics
