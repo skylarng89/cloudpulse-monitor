@@ -14,9 +14,11 @@ db.exec(`
     url TEXT NOT NULL,
     type TEXT NOT NULL DEFAULT 'http',
     interval_seconds INTEGER NOT NULL DEFAULT 60,
+    timeout_seconds INTEGER NOT NULL DEFAULT 30,
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(url, type)
   );
 
   CREATE TABLE IF NOT EXISTS monitor_checks (

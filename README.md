@@ -59,6 +59,39 @@ sqlite3 monitoring.db "DELETE FROM monitors WHERE name LIKE '% API' OR name LIKE
 **Option 3: Reset entire database**
 ```bash
 cd backend
-rm monitoring.db
+rm data/uptime.db
 # Restart backend - it will recreate the database
+```
+
+---
+
+## Database Schema
+
+### Unique Constraints
+
+The `monitors` table has a unique constraint on `(url, type)` to prevent duplicate monitoring:
+
+```sql
+UNIQUE(url, type)
+```
+
+**What this means:**
+- ✅ You can have multiple monitors with the same name
+- ✅ You can monitor the same URL with different types (e.g., HTTP and Ping)
+- ❌ You cannot create two HTTP monitors for the same URL
+- ❌ You cannot create two Ping monitors for the same host
+
+**Example:**
+```
+✅ Name="Production", URL="https://api.com", Type="http"
+✅ Name="Backup", URL="https://api.com", Type="ping"  (different type)
+❌ Name="Secondary", URL="https://api.com", Type="http"  (duplicate)
+```
+
+**Migration Note:**
+If you have an existing database, you'll need to recreate it to apply the unique constraint:
+```bash
+cd backend
+rm data/uptime.db
+npm start  # Will recreate with new schema
 ```

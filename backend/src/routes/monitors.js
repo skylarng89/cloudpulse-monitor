@@ -30,7 +30,7 @@ async function monitorRoutes(fastify, options) {
   fastify.post('/monitors', async (request, reply) => {
     try {
       const monitorData = request.body;
-      const monitor = monitorService.createMonitor(monitorData);
+      const monitor = await monitorService.createMonitor(monitorData);
       return monitor;
     } catch (error) {
       reply.code(400).send({ error: error.message });
@@ -42,7 +42,7 @@ async function monitorRoutes(fastify, options) {
     try {
       const { id } = request.params;
       const monitorData = request.body;
-      const monitor = monitorService.updateMonitor(parseInt(id), monitorData);
+      const monitor = await monitorService.updateMonitor(parseInt(id), monitorData);
       return monitor;
     } catch (error) {
       reply.code(400).send({ error: error.message });

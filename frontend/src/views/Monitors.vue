@@ -10,6 +10,16 @@
         <p class="mt-1 text-sm text-gray-600">Manage your monitoring endpoints</p>
       </div>
       <div class="flex items-center gap-3">
+        <!-- Bulk Delete Button -->
+        <button
+          v-if="selectedMonitors.size > 0"
+          @click="confirmBulkDelete"
+          class="w-full text-center inline-flex items-center gap-2 px-4 py-2 bg-red-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-sm"
+        >
+          <i class="ti ti-trash"></i>
+          Delete Selected ({{ selectedMonitors.size }})
+        </button>
+        
         <!-- Search Bar -->
         <div class="relative max-w-xs w-full">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -77,6 +87,15 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
+              <th scope="col" class="px-6 py-3 text-left">
+                <input
+                  type="checkbox"
+                  :checked="isAllSelected"
+                  @change="toggleSelectAll"
+                  class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
+                  title="Select all monitors"
+                />
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -87,7 +106,7 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-if="filteredMonitors.length === 0">
-              <td colspan="6" class="px-6 py-12 text-center">
+              <td colspan="7" class="px-6 py-12 text-center">
                 <i class="ti ti-search-off text-gray-300 text-6xl"></i>
                 <h3 class="mt-4 text-lg font-medium text-gray-900">No monitors found</h3>
                 <p class="mt-2 text-sm text-gray-600">Try adjusting your search query</p>
@@ -101,13 +120,29 @@
               </td>
             </tr>
             <tr v-for="monitor in paginatedMonitors" :key="monitor.id" class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  :checked="selectedMonitors.has(monitor.id)"
+                  @change="toggleMonitorSelection(monitor.id)"
+                  class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
+                />
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ monitor.name }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{{ monitor.url }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.type.toUpperCase() }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ monitor.interval_seconds }}s</td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  Unknown
+                <span 
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase"
+                  :class="{
+                    'bg-green-100 text-green-800': monitor.status === 'up',
+                    'bg-red-100 text-red-800': monitor.status === 'down',
+                    'bg-yellow-100 text-yellow-800': monitor.status === 'error',
+                    'bg-gray-100 text-gray-800': !monitor.status || monitor.status === 'unknown'
+                  }"
+                >
+                  {{ monitor.status || 'unknown' }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -349,7 +384,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import apiService from '@/services/api'
+import apiService from '@/services/api.js'
 import { useToast } from '@/composables/useToast'
 
 interface Monitor {
@@ -358,8 +393,12 @@ interface Monitor {
   url: string
   type: string
   interval_seconds: number
-  active: boolean
-  created_at: string
+  timeout_seconds?: number
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
+  status?: string
+  lastCheck?: string | null
 }
 
 const monitors = ref<Monitor[]>([])
@@ -373,6 +412,7 @@ const editingMonitor = ref<Monitor | null>(null)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(20)
+const selectedMonitors = ref(new Set<number>())
 const { error: showError, success: showSuccess } = useToast()
 
 const newMonitor = ref({
@@ -429,6 +469,32 @@ watch(searchQuery, () => {
   currentPage.value = 1
 })
 
+// Check if all visible monitors are selected
+const isAllSelected = computed(() => {
+  if (paginatedMonitors.value.length === 0) return false
+  return paginatedMonitors.value.every(m => selectedMonitors.value.has(m.id))
+})
+
+// Toggle individual monitor selection
+const toggleMonitorSelection = (monitorId: number) => {
+  if (selectedMonitors.value.has(monitorId)) {
+    selectedMonitors.value.delete(monitorId)
+  } else {
+    selectedMonitors.value.add(monitorId)
+  }
+}
+
+// Toggle select all on current page
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    // Deselect all on current page
+    paginatedMonitors.value.forEach(m => selectedMonitors.value.delete(m.id))
+  } else {
+    // Select all on current page
+    paginatedMonitors.value.forEach(m => selectedMonitors.value.add(m.id))
+  }
+}
+
 // Computed properties for dynamic labels and placeholders
 const getUrlLabel = computed(() => {
   switch (newMonitor.value.type) {
@@ -460,8 +526,30 @@ const fetchMonitors = async () => {
   try {
     loading.value = true
     connectionError.value = ''
-    const data = await apiService.getMonitors()
-    monitors.value = data
+    const monitorsData = await apiService.getMonitors()
+    
+    // Fetch latest check status for each monitor
+    const monitorsWithStatus = await Promise.all(
+      monitorsData.map(async (monitor: Monitor) => {
+        try {
+          const checks = await apiService.getMonitorChecks(monitor.id, { limit: 1 })
+          const latestCheck = checks[0]
+          return {
+            ...monitor,
+            status: latestCheck?.status || 'unknown',
+            lastCheck: latestCheck?.checked_at
+          }
+        } catch (error) {
+          return {
+            ...monitor,
+            status: 'unknown',
+            lastCheck: null
+          }
+        }
+      })
+    )
+    
+    monitors.value = monitorsWithStatus
   } catch (error: any) {
     connectionError.value = error.message || 'Failed to connect to backend'
   } finally {
@@ -555,7 +643,8 @@ const addMonitor = async () => {
     await fetchMonitors()
   } catch (error: any) {
     if (error.message.includes('already exists')) {
-      validationErrors.value.name = error.message
+      // Show error in the URL field since it's a URL+type duplicate
+      validationErrors.value.url = error.message
     } else {
       const action = editingMonitor.value ? 'update' : 'create'
       showError(`Failed to ${action} monitor: ${error.message}`)
@@ -598,6 +687,37 @@ const deleteMonitor = async () => {
     showSuccess('Monitor deleted successfully')
   } catch (error: any) {
     showError(`Failed to delete monitor: ${error.message}`)
+  } finally {
+    deleting.value = false
+  }
+}
+
+const confirmBulkDelete = () => {
+  if (selectedMonitors.value.size === 0) return
+  
+  const count = selectedMonitors.value.size
+  if (confirm(`Are you sure you want to delete ${count} monitor(s)? This action cannot be undone.`)) {
+    deleteBulkMonitors()
+  }
+}
+
+const deleteBulkMonitors = async () => {
+  if (selectedMonitors.value.size === 0) return
+
+  try {
+    deleting.value = true
+    const deletePromises = Array.from(selectedMonitors.value).map(id => 
+      apiService.deleteMonitor(id)
+    )
+    
+    await Promise.all(deletePromises)
+    
+    const count = selectedMonitors.value.size
+    selectedMonitors.value.clear()
+    await fetchMonitors()
+    showSuccess(`Successfully deleted ${count} monitor(s)`)
+  } catch (error: any) {
+    showError(`Failed to delete monitors: ${error.message}`)
   } finally {
     deleting.value = false
   }
