@@ -70,8 +70,10 @@ class ApiService {
     return response.data
   }
 
-  async getMonitorChecks(id) {
-    const response = await api.get(`/monitors/${id}/checks`)
+  async getMonitorChecks(id, params = {}) {
+    const queryParams = new URLSearchParams(params).toString()
+    const url = queryParams ? `/monitors/${id}/checks?${queryParams}` : `/monitors/${id}/checks`
+    const response = await api.get(url)
     return response.data
   }
 
@@ -125,6 +127,16 @@ class ApiService {
   async runMonitorCheck(monitorId) {
     const response = await api.post(`/scheduler/run/${monitorId}`)
     return response.data
+  }
+
+  // Alias for compatibility with Dashboard component
+  async checkMonitor(monitorId) {
+    return this.runMonitorCheck(monitorId)
+  }
+
+  // Alias for checking all monitors
+  async triggerManualCheck() {
+    return this.checkAllMonitors()
   }
 
   // Utility methods

@@ -233,6 +233,10 @@ const triggerManualCheck = async () => {
   }
 }
 
+const refreshData = () => {
+  fetchDashboardData()
+}
+
 const retryConnection = () => {
   fetchDashboardData()
 }
