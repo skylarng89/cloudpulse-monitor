@@ -68,7 +68,8 @@ fastify.register(require('@fastify/cors'), {
 fastify.register(monitorRoutes, {
   prefix: '/api',
   monitorService,
-  monitoringService
+  monitoringService,
+  schedulerService
 });
 fastify.register(monitoringRoutes, {
   prefix: '/api',

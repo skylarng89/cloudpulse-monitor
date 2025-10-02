@@ -1,6 +1,6 @@
 // Monitor management routes
 async function monitorRoutes(fastify, options) {
-  const { monitorService, monitoringService } = options;
+  const { monitorService, monitoringService, schedulerService } = options;
 
   // Get all monitors
   fastify.get('/monitors', async (request, reply) => {
@@ -53,7 +53,16 @@ async function monitorRoutes(fastify, options) {
   fastify.delete('/monitors/:id', async (request, reply) => {
     try {
       const { id } = request.params;
-      monitorService.deleteMonitor(parseInt(id));
+      const monitorId = parseInt(id);
+      
+      // Unschedule the monitor if scheduler is running
+      if (schedulerService && schedulerService.isRunning) {
+        schedulerService.unscheduleMonitor(monitorId);
+      }
+      
+      // Delete the monitor and all related data
+      monitorService.deleteMonitor(monitorId);
+      
       return { success: true };
     } catch (error) {
       reply.code(400).send({ error: error.message });

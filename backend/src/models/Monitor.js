@@ -170,14 +170,29 @@ class Monitor {
   }
 
   /**
-   * Deletes a monitor
+   * Deletes a monitor and all related records
    * @param {Database} db - Database instance
    * @param {number} id - Monitor ID
    */
   static delete(db, id) {
     try {
-      const stmt = db.prepare('DELETE FROM monitors WHERE id = ?');
-      stmt.run(id);
+      // Use a transaction to ensure atomic deletion
+      const deleteTransaction = db.transaction(() => {
+        // First, delete all related monitor checks
+        const deleteChecks = db.prepare('DELETE FROM monitor_checks WHERE monitor_id = ?');
+        deleteChecks.run(id);
+        
+        // Then, delete all related incidents
+        const deleteIncidents = db.prepare('DELETE FROM incidents WHERE monitor_id = ?');
+        deleteIncidents.run(id);
+        
+        // Finally, delete the monitor itself
+        const deleteMonitor = db.prepare('DELETE FROM monitors WHERE id = ?');
+        deleteMonitor.run(id);
+      });
+      
+      // Execute the transaction
+      deleteTransaction();
     } catch (error) {
       throw new Error(`Failed to delete monitor ${id}: ${error.message}`);
     }
