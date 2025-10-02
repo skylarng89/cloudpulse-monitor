@@ -57,7 +57,10 @@
       <!-- Stats Grid -->
       <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <!-- Total Monitors -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-purple-500 hover:shadow-md transition-shadow duration-200">
+        <div 
+          class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-purple-500 hover:shadow-md transition-shadow duration-200 cursor-help"
+          title="Total number of configured monitors across all types (HTTP, Ping, TCP)"
+        >
           <div class="p-5">
             <div class="flex items-center">
               <div class="flex-shrink-0">
@@ -76,7 +79,10 @@
         </div>
 
         <!-- Active -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-green-500 hover:shadow-md transition-shadow duration-200">
+        <div 
+          class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-green-500 hover:shadow-md transition-shadow duration-200 cursor-help"
+          title="Monitors that are currently responding successfully"
+        >
           <div class="p-5">
             <div class="flex items-center">
               <div class="flex-shrink-0">
@@ -95,7 +101,10 @@
         </div>
 
         <!-- Down -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-red-500 hover:shadow-md transition-shadow duration-200">
+        <div 
+          class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-red-500 hover:shadow-md transition-shadow duration-200 cursor-help"
+          title="Monitors that are not responding or returning errors"
+        >
           <div class="p-5">
             <div class="flex items-center">
               <div class="flex-shrink-0">
@@ -114,7 +123,10 @@
         </div>
 
         <!-- Avg Response -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-blue-500 hover:shadow-md transition-shadow duration-200">
+        <div 
+          class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-blue-500 hover:shadow-md transition-shadow duration-200 cursor-help"
+          title="Average response time across all active monitors. Lower is better!"
+        >
           <div class="p-5">
             <div class="flex items-center">
               <div class="flex-shrink-0">
@@ -214,13 +226,14 @@
                   <h3 class="text-base font-semibold text-gray-900">{{ monitor.name }}</h3>
                 </div>
                 <span 
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase cursor-help"
                   :class="{
                     'bg-green-100 text-green-800': monitor.status === 'up',
                     'bg-red-100 text-red-800': monitor.status === 'down',
                     'bg-yellow-100 text-yellow-800': monitor.status === 'error',
                     'bg-gray-100 text-gray-800': !monitor.status || monitor.status === 'unknown'
                   }"
+                  :title="getStatusTooltip(monitor.status)"
                 >
                   {{ monitor.status || 'unknown' }}
                 </span>
@@ -234,11 +247,18 @@
 
               <!-- Details -->
               <div class="flex items-center gap-4 mb-4 text-sm text-gray-600">
-                <div v-if="monitor.responseTime" class="flex items-center gap-1">
+                <div 
+                  v-if="monitor.responseTime" 
+                  class="flex items-center gap-1 cursor-help"
+                  :title="getResponseTimeTooltip(monitor.responseTime)"
+                >
                   <i class="ti ti-clock text-gray-400"></i>
                   <span>{{ monitor.responseTime }}ms</span>
                 </div>
-                <div class="flex items-center gap-1">
+                <div 
+                  class="flex items-center gap-1 cursor-help"
+                  :title="'Last checked: ' + (monitor.lastCheck ? new Date(monitor.lastCheck).toLocaleString() : 'Never')"
+                >
                   <i class="ti ti-calendar-time text-gray-400"></i>
                   <span>{{ formatTime(monitor.lastCheck) }}</span>
                 </div>
@@ -363,6 +383,34 @@ const formatTime = (dateString: string | null) => {
     return format(new Date(dateString), 'MMM dd, HH:mm')
   } catch (error) {
     return 'Invalid Date'
+  }
+}
+
+const getResponseTimeTooltip = (responseTime: number) => {
+  if (responseTime < 100) {
+    return `${responseTime}ms - Excellent! Very fast response time.`
+  } else if (responseTime < 300) {
+    return `${responseTime}ms - Good response time. Your service is performing well.`
+  } else if (responseTime < 1000) {
+    return `${responseTime}ms - Acceptable response time. Consider optimization if this persists.`
+  } else if (responseTime < 3000) {
+    return `${responseTime}ms - Slow response time. Users may experience delays.`
+  } else {
+    return `${responseTime}ms - Very slow! This needs immediate attention.`
+  }
+}
+
+const getStatusTooltip = (status: string | undefined) => {
+  switch (status) {
+    case 'up':
+      return 'Monitor is responding successfully and all checks are passing'
+    case 'down':
+      return 'Monitor is not responding or connection failed'
+    case 'error':
+      return 'An error occurred while checking this monitor'
+    case 'unknown':
+    default:
+      return 'No check data available yet. Click "Check Now" to test.'
   }
 }
 
