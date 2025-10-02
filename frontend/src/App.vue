@@ -1,15 +1,53 @@
 <template>
-  <div id="app">
-    <header class="app-header">
-      <h1>Uptime Monitor</h1>
-      <nav>
-        <router-link to="/">Dashboard</router-link>
-        <router-link to="/monitors">Monitors</router-link>
-        <router-link to="/reports">Reports</router-link>
-      </nav>
+  <div id="app" class="min-h-screen bg-gray-50">
+    <!-- Header with Tailwind -->
+    <header class="sticky top-0 z-50 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 shadow-lg backdrop-blur-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Logo -->
+          <div class="flex items-center gap-3">
+            <i class="ti ti-activity text-3xl text-white animate-pulse"></i>
+            <span class="text-xl font-bold text-white tracking-tight">CloudPulse</span>
+            <span class="px-3 py-1 text-xs font-semibold text-white bg-white/20 rounded-full uppercase tracking-wider">
+              Monitor
+            </span>
+          </div>
+          
+          <!-- Navigation -->
+          <nav class="flex items-center gap-2">
+            <router-link 
+              to="/" 
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
+              active-class="bg-white/25 text-white"
+            >
+              <i class="ti ti-dashboard"></i>
+              <span class="hidden sm:inline">Dashboard</span>
+            </router-link>
+            
+            <router-link 
+              to="/monitors" 
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
+              active-class="bg-white/25 text-white"
+            >
+              <i class="ti ti-server"></i>
+              <span class="hidden sm:inline">Monitors</span>
+            </router-link>
+            
+            <router-link 
+              to="/reports" 
+              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
+              active-class="bg-white/25 text-white"
+            >
+              <i class="ti ti-chart-line"></i>
+              <span class="hidden sm:inline">Reports</span>
+            </router-link>
+          </nav>
+        </div>
+      </div>
     </header>
 
-    <main class="main-content">
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <router-view />
     </main>
   </div>
@@ -17,46 +55,16 @@
 
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-
 </script>
 
 <style scoped>
-.app-header {
-  background: #2c3e50;
-  color: white;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.app-header nav {
-  display: flex;
-  gap: 1rem;
-}
-
-.app-header nav a {
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.app-header nav a:hover,
-.app-header nav a.router-link-active {
-  background-color: #34495e;
-}
-
-.main-content {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/* Minimal custom styles - Tailwind handles most of it */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 </style>

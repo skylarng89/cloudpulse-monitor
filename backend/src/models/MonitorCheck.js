@@ -3,91 +3,18 @@
  * Handles monitoring check results and database operations
  */
 class MonitorCheck {
-  /**
-   * Creates a new MonitorCheck instance
-   * @param {Object} data - Check result data
-   * @param {number} data.monitor_id - Associated monitor ID
-   * @param {string} data.status - Check status (up, down, error)
-   * @param {number} data.response_time - Response time in milliseconds
-   * @param {number} data.status_code - HTTP status code (for HTTP checks)
-   * @param {string} data.error_message - Error message if check failed
-   */
-  constructor(data = {}) {
-    this.id = data.id || null;
-    this.monitor_id = data.monitor_id || null;
-    this.status = data.status || 'unknown';
-    this.response_time = data.response_time || null;
-    this.status_code = data.status_code || null;
-    this.error_message = data.error_message || null;
-    this.checked_at = data.checked_at || new Date().toISOString();
-
-    // Validate data on creation
-    this.validate();
+  constructor(data) {
+    this.id = data.id;
+    this.monitor_id = data.monitor_id;
+    this.status_code = data.status_code;
+    this.response_time_ms = data.response_time_ms;
+    this.is_up = data.is_up;
+    this.error_message = data.error_message;
+    this.checked_at = data.checked_at;
   }
 
   /**
-   * Validates check result data
-   * @throws {Error} If validation fails
-   */
-  validate() {
-    const errors = [];
-
-    // Monitor ID validation
-    if (!this.monitor_id || typeof this.monitor_id !== 'number') {
-      errors.push('Monitor ID is required and must be a number');
-    }
-
-    // Status validation
-    const validStatuses = ['up', 'down', 'error', 'unknown'];
-    if (!validStatuses.includes(this.status)) {
-      errors.push(`Status must be one of: ${validStatuses.join(', ')}`);
-    }
-
-    // Response time validation (if provided)
-    if (this.response_time !== null && (typeof this.response_time !== 'number' || this.response_time < 0)) {
-      errors.push('Response time must be a positive number or null');
-    }
-
-    // Status code validation (if provided)
-    if (this.status_code !== null && (typeof this.status_code !== 'number' || this.status_code < 100 || this.status_code > 599)) {
-      errors.push('Status code must be a valid HTTP status code (100-599) or null');
-    }
-
-    if (errors.length > 0) {
-      throw new Error(`Monitor check validation failed: ${errors.join(', ')}`);
-    }
-  }
-
-  /**
-   * Saves the check result to database
-   * @param {Database} db - SQLite database instance
-   * @returns {number} Inserted check ID
-   */
-  save(db) {
-    try {
-      const stmt = db.prepare(`
-        INSERT INTO monitor_checks (monitor_id, status, response_time, status_code, error_message, checked_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-      const result = stmt.run(
-        this.monitor_id,
-        this.status,
-        this.response_time,
-        this.status_code,
-        this.error_message,
-        this.checked_at
-      );
-
-      this.id = result.lastInsertRowid;
-      return this.id;
-    } catch (error) {
-      throw new Error(`Failed to save monitor check: ${error.message}`);
-    }
-  }
-
-  /**
-   * Creates a MonitorCheck instance from database row
+   * Creates a MonitorCheck instance from a database row
    * @param {Object} row - Database row
    * @returns {MonitorCheck} MonitorCheck instance
    */
@@ -95,20 +22,20 @@ class MonitorCheck {
     return new MonitorCheck({
       id: row.id,
       monitor_id: row.monitor_id,
-      status: row.status,
-      response_time: row.response_time,
       status_code: row.status_code,
+      response_time_ms: row.response_time_ms,
+      is_up: row.is_up,
       error_message: row.error_message,
       checked_at: row.checked_at
     });
   }
 
   /**
-   * Finds recent checks for a specific monitor
-   * @param {Database} db - SQLite database instance
+   * Finds all checks for a specific monitor
+   * @param {Database} db - Database instance
    * @param {number} monitorId - Monitor ID
-   * @param {number} limit - Maximum number of results (default: 100)
-   * @returns {MonitorCheck[]} Array of check instances
+   * @param {number} limit - Maximum number of records to return
+   * @returns {Array<MonitorCheck>} Array of monitor checks
    */
   static findByMonitorId(db, monitorId, limit = 100) {
     try {
@@ -118,67 +45,80 @@ class MonitorCheck {
         ORDER BY checked_at DESC
         LIMIT ?
       `);
-
       const rows = stmt.all(monitorId, limit);
       return rows.map(row => this.fromRow(row));
     } catch (error) {
-      throw new Error(`Failed to find monitor checks: ${error.message}`);
+      throw new Error(`Failed to find checks for monitor ${monitorId}: ${error.message}`);
     }
   }
 
   /**
-   * Finds recent checks across all monitors
-   * @param {Database} db - SQLite database instance
-   * @param {number} limit - Maximum number of results (default: 500)
-   * @returns {MonitorCheck[]} Array of check instances
+   * Creates a new monitor check record
+   * @param {Database} db - Database instance
+   * @param {Object} checkData - Check result data
+   * @returns {MonitorCheck} Created monitor check
    */
-  static findRecent(db, limit = 500) {
+  static create(db, checkData) {
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO monitor_checks (monitor_id, status_code, response_time_ms, is_up, error_message)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+
+      const result = stmt.run(
+        checkData.monitor_id,
+        checkData.status_code || 200,
+        checkData.response_time_ms || 0,
+        checkData.is_up ? 1 : 0,
+        checkData.error_message || null
+      );
+
+      return this.findById(db, result.lastInsertRowid);
+    } catch (error) {
+      throw new Error(`Failed to create monitor check: ${error.message}`);
+    }
+  }
+
+  /**
+   * Finds a monitor check by ID
+   * @param {Database} db - Database instance
+   * @param {number} id - Check ID
+   * @returns {MonitorCheck|null} MonitorCheck instance or null
+   */
+  static findById(db, id) {
+    try {
+      const stmt = db.prepare('SELECT * FROM monitor_checks WHERE id = ?');
+      const row = stmt.get(id);
+      return row ? this.fromRow(row) : null;
+    } catch (error) {
+      throw new Error(`Failed to find monitor check ${id}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Gets recent checks across all monitors
+   * @param {Database} db - Database instance
+   * @param {number} limit - Maximum number of records to return
+   * @returns {Array<MonitorCheck>} Array of recent monitor checks
+   */
+  static getRecentChecks(db, limit = 50) {
     try {
       const stmt = db.prepare(`
         SELECT * FROM monitor_checks
         ORDER BY checked_at DESC
         LIMIT ?
       `);
-
       const rows = stmt.all(limit);
       return rows.map(row => this.fromRow(row));
     } catch (error) {
-      throw new Error(`Failed to find recent checks: ${error.message}`);
+      throw new Error(`Failed to get recent checks: ${error.message}`);
     }
   }
 
   /**
-   * Gets check statistics for a monitor
-   * @param {Database} db - SQLite database instance
-   * @param {number} monitorId - Monitor ID
-   * @param {number} hours - Hours to look back (default: 24)
-   * @returns {Object} Statistics object
-   */
-  static getStatsForMonitor(db, monitorId, hours = 24) {
-    try {
-      const stmt = db.prepare(`
-        SELECT
-          COUNT(*) as total_checks,
-          COUNT(CASE WHEN status = 'up' THEN 1 END) as up_checks,
-          COUNT(CASE WHEN status = 'down' THEN 1 END) as down_checks,
-          AVG(response_time) as avg_response_time,
-          MIN(response_time) as min_response_time,
-          MAX(response_time) as max_response_time
-        FROM monitor_checks
-        WHERE monitor_id = ?
-        AND checked_at >= datetime('now', '-${hours} hours')
-      `);
-
-      return stmt.get(monitorId);
-    } catch (error) {
-      throw new Error(`Failed to get check stats: ${error.message}`);
-    }
-  }
-
-  /**
-   * Gets overall system statistics
-   * @param {Database} db - SQLite database instance
-   * @param {number} hours - Hours to look back (default: 24)
+   * Gets system statistics
+   * @param {Database} db - Database instance
+   * @param {number} hours - Number of hours to look back
    * @returns {Object} System statistics
    */
   static getSystemStats(db, hours = 24) {
@@ -186,33 +126,44 @@ class MonitorCheck {
       const stmt = db.prepare(`
         SELECT
           COUNT(*) as total_checks,
-          COUNT(CASE WHEN status = 'up' THEN 1 END) as up_checks,
-          COUNT(CASE WHEN status = 'down' THEN 1 END) as down_checks,
-          COUNT(CASE WHEN status = 'error' THEN 1 END) as error_checks,
-          AVG(response_time) as avg_response_time,
-          MIN(response_time) as min_response_time,
-          MAX(response_time) as max_response_time
+          AVG(response_time_ms) as avg_response_time,
+          COUNT(CASE WHEN is_up = 1 THEN 1 END) as successful_checks,
+          COUNT(CASE WHEN is_up = 0 THEN 1 END) as failed_checks,
+          MIN(checked_at) as first_check,
+          MAX(checked_at) as last_check
         FROM monitor_checks
         WHERE checked_at >= datetime('now', '-${hours} hours')
       `);
 
-      return stmt.get();
+      const stats = stmt.get();
+
+      return {
+        total_checks: stats.total_checks || 0,
+        avg_response_time: Math.round(stats.avg_response_time || 0),
+        successful_checks: stats.successful_checks || 0,
+        failed_checks: stats.failed_checks || 0,
+        success_rate: stats.total_checks > 0 ? (stats.successful_checks / stats.total_checks * 100) : 0,
+        uptime_percentage: stats.total_checks > 0 ? (stats.successful_checks / stats.total_checks * 100) : 100,
+        first_check: stats.first_check,
+        last_check: stats.last_check,
+        time_range_hours: hours
+      };
     } catch (error) {
-      throw new Error(`Failed to get system stats: ${error.message}`);
+      throw new Error(`Failed to get system statistics: ${error.message}`);
     }
   }
 
   /**
-   * Cleans up old check records (older than specified days)
-   * @param {Database} db - SQLite database instance
-   * @param {number} days - Days to keep (default: 30)
+   * Cleans up old check records
+   * @param {Database} db - Database instance
+   * @param {number} daysToKeep - Number of days of data to keep
    * @returns {number} Number of records deleted
    */
-  static cleanupOldRecords(db, days = 30) {
+  static cleanupOldRecords(db, daysToKeep = 30) {
     try {
       const stmt = db.prepare(`
         DELETE FROM monitor_checks
-        WHERE checked_at < datetime('now', '-${days} days')
+        WHERE checked_at < datetime('now', '-${daysToKeep} days')
       `);
 
       const result = stmt.run();

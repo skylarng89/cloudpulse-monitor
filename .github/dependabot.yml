@@ -5,13 +5,13 @@
 
 version: 2
 updates:
-  - package-ecosystem: "gomod"
+  - package-ecosystem: "npm"
     directory: "/backend"
     schedule:
       interval: "daily"
     target-branch: "dev"
   - package-ecosystem: "npm"
-    directory: "/backend"
+    directory: "/frontend"
     schedule:
       interval: "daily"
     target-branch: "dev"
