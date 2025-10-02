@@ -346,19 +346,48 @@ const validateForm = () => {
     isValid = false
   }
 
+  // URL/Host validation based on type
   if (!newMonitor.value.url.trim()) {
-    validationErrors.value.url = 'URL is required'
+    validationErrors.value.url = newMonitor.value.type === 'http' ? 'URL is required' : 'Host is required'
     isValid = false
   } else {
-    try {
-      const url = new URL(newMonitor.value.url)
-      if (!['http:', 'https:'].includes(url.protocol)) {
-        validationErrors.value.url = 'URL must use HTTP or HTTPS'
+    // Type-specific validation
+    if (newMonitor.value.type === 'http') {
+      // HTTP/HTTPS validation
+      try {
+        const url = new URL(newMonitor.value.url)
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          validationErrors.value.url = 'URL must use HTTP or HTTPS'
+          isValid = false
+        }
+      } catch {
+        validationErrors.value.url = 'Please enter a valid URL (e.g., https://example.com)'
         isValid = false
       }
-    } catch {
-      validationErrors.value.url = 'Please enter a valid URL'
-      isValid = false
+    } else if (newMonitor.value.type === 'ping') {
+      // Ping validation - hostname or IP address
+      const hostPattern = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$/
+      const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+      
+      if (!hostPattern.test(newMonitor.value.url) && !ipPattern.test(newMonitor.value.url)) {
+        validationErrors.value.url = 'Please enter a valid hostname or IP address'
+        isValid = false
+      }
+    } else if (newMonitor.value.type === 'tcp') {
+      // TCP validation - host:port format
+      const tcpPattern = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?:[0-9]{1,5}$|^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9])?:[0-9]{1,5}$/
+      
+      if (!tcpPattern.test(newMonitor.value.url)) {
+        validationErrors.value.url = 'Please enter host:port format (e.g., example.com:3306)'
+        isValid = false
+      } else {
+        // Validate port number is in valid range
+        const port = parseInt(newMonitor.value.url.split(':')[1])
+        if (port < 1 || port > 65535) {
+          validationErrors.value.url = 'Port must be between 1 and 65535'
+          isValid = false
+        }
+      }
     }
   }
 
