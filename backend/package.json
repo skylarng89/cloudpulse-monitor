@@ -18,7 +18,7 @@
     "ejs": "^3.1.9",
     "fastify": "^4.21.0",
     "node-cron": "^3.0.2",
-    "nodemailer": "^6.9.3",
+    "nodemailer": "^7.0.9",
     "ping": "^0.4.4",
     "ssl-checker": "^2.0.7",
     "ws": "^8.13.0"
