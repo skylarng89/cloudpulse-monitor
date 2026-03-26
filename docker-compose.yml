@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # CloudPulse Monitor Backend
+  # CloudPulse Monitor Backend (Java Spring Boot)
   cloudpulse-backend:
     build:
       context: .
@@ -9,22 +9,23 @@ services:
     container_name: cloudpulse-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"  # ← Backend API on port 3000
+      - "8080:8080"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
+      - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_PORT=8080
     volumes:
       - ./data:/app/data # SQLite database persistence
     networks:
       - cloudpulse-network
     healthcheck:
-      test: ["CMD", "node", "-e", "const http=require('http');const req=http.request({hostname:'localhost',port:3000,path:'/'},res=>{process.exit(res.statusCode===200?0:1)});req.on('error',()=>process.exit(1));req.end();"]
+      # Placeholder healthcheck until Spring is fully operational
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
-  # CloudPulse Monitor Frontend
+  # CloudPulse Monitor Frontend (Vue.js)
   cloudpulse-frontend:
     build:
       context: .
@@ -32,7 +33,7 @@ services:
     container_name: cloudpulse-frontend
     restart: unless-stopped
     ports:
-      - "3001:80"  # ← Frontend dashboard on port 3001
+      - "3001:80"
     depends_on:
       - cloudpulse-backend
     networks:

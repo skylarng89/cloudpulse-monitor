@@ -1,45 +1,42 @@
 # Dockerfile for CloudPulse Monitor Frontend
 FROM node:22-alpine AS builder
 
-# Install Python and build dependencies for native modules
+# Install Python and build dependencies, plus enable pnpm
 RUN apk add --no-cache python3 py3-pip build-base
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better layer caching
-COPY frontend/package*.json ./
+# Copy root configurations
+COPY package.json pnpm-workspace.yaml ./
+COPY frontend/package.json ./frontend/
 
-# Install all dependencies to generate lock file
-RUN npm ci
+# Copy lockfile if it exists
+COPY pnpm-lock.yaml* ./
 
-# Copy configuration files needed for build
-COPY frontend/vite.config.ts ./
-COPY frontend/index.html ./
+# Install dependencies for the workspace
+RUN pnpm install
 
 # Copy source code
-COPY frontend/src ./src
+COPY frontend ./frontend
 
-# Build the application (skip type-check for Docker)
-RUN npm run build-only
+# Build the application
+WORKDIR /app/frontend
+RUN pnpm run build-only
 
-# Production stage with Node.js static server
+# Production stage
 FROM node:22-alpine AS production
-
-# Set working directory
 WORKDIR /app
 
 # Copy built assets from builder stage
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/frontend/dist ./dist
 
 # Install a simple static server
 RUN npm install -g serve
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-# Switch to non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 USER nextjs
 
 # Expose port
