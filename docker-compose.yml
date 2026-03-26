@@ -1,6 +1,27 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: cloudpulse-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cloudpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - cloudpulse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # CloudPulse Monitor Backend (Java Spring Boot)
   cloudpulse-backend:
     build:
@@ -13,12 +34,17 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_PORT=8080
-    volumes:
-      - ./data:/app/data # SQLite database persistence
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=cloudpulse
+      - DB_USER=postgres
+      - DB_PASS=postgres
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - cloudpulse-network
     healthcheck:
-      # Placeholder healthcheck until Spring is fully operational
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <message>message</message>
+                <logger>logger</logger>
+                <thread>thread</thread>
+                <level>level</level>
+            </fieldNames>
+            <!-- Include MDC context such as correlation_id automatically -->
+            <includeMdc>true</includeMdc>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE_JSON" />
+    </root>
+
+    <!-- Suppress verbose internal framework logs unless needed -->
+    <logger name="org.springframework" level="WARN" />
+    <logger name="org.hibernate.SQL" level="DEBUG" />
+</configuration>

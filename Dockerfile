@@ -1,18 +1,23 @@
-# Base Dockerfile for CloudPulse Monitor Backend (Spring Boot 4)
 FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /app
 
-# Placeholder for Phase 2: Copy Gradle/Maven wrapper and source code
-# RUN ./gradlew build -x test
+# Copy gradle wrapper and config
+COPY backend/gradlew backend/build.gradle backend/settings.gradle ./
+COPY backend/gradle ./gradle
 
-# Production stage
-FROM eclipse-temurin:25-jre-alpine
+# Copy source
+COPY backend/src ./src
+
+# Build the Spring Boot executable
+RUN ./gradlew build -x test
+
+# Production execution stage
+FROM eclipse-temurin:25-jre-alpine AS production
 WORKDIR /app
 
-# Needs to be matched with actual JAR generated in Phase 2
-# COPY --from=builder /app/build/libs/*.jar app.jar
-
+# Expose backend API
 EXPOSE 8080
 
-# Temporary placeholder command until Java app is created in Phase 2
-CMD ["sh", "-c", "echo 'Backend will run on port 8080 once Spring Boot is initialized in Phase 2' && sleep infinity"]
+# Run the app
+COPY --from=builder /app/build/libs/*.jar app.jar
+CMD ["java", "-jar", "app.jar"]
