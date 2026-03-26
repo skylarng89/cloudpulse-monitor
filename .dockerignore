@@ -1,0 +1,66 @@
+# =========================
+# Memory Bank & Docs
+# =========================
+memory-bank/
+README.md
+
+# =========================
+# Git
+# =========================
+.git/
+.github/
+.gitignore
+
+# =========================
+# Build Outputs & Caches
+# =========================
+node_modules/
+dist/
+build/
+backend/build/
+target/
+out/
+.gradle/
+.npm/
+
+# =========================
+# Operating System Files
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+
+# =========================
+# Local Data & Logs
+# =========================
+data/
+tmp/
+temp/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# =========================
+# IDEs and Editors
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.iml
+*.ipr
+*.iws
+.springBeans
+.sts4-cache
