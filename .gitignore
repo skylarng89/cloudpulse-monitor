@@ -164,7 +164,3 @@ ecosystem.config.js
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-# Memory Banks
-memory-bank/
-memory-bank/*
