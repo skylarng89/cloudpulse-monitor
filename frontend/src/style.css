@@ -1,2 +1,70 @@
 /* Tailwind CSS v4 */
 @import "tailwindcss";
+
+:root {
+  --color-primary-50: 238 242 255;
+  --color-primary-100: 224 231 255;
+  --color-primary-200: 199 210 254;
+  --color-primary-300: 165 180 252;
+  --color-primary-400: 129 140 248;
+  --color-primary-500: 99 102 241;
+  --color-primary-600: 79 70 229;
+  --color-primary-700: 67 56 202;
+  --color-primary-800: 55 48 163;
+  --color-primary-900: 49 46 129;
+  
+  --bg-base: 249 250 251;
+  --bg-card: 255 255 255;
+  --bg-elevated: 255 255 255;
+  --text-primary: 17 24 39;
+  --text-secondary: 107 114 128;
+  --text-muted: 156 163 175;
+  --border-color: 229 231 235;
+}
+
+.dark {
+  --bg-base: 15 23 42;
+  --bg-card: 30 41 59;
+  --bg-elevated: 51 65 85;
+  --text-primary: 248 250 252;
+  --text-secondary: 203 213 225;
+  --text-muted: 148 163 184;
+  --border-color: 51 65 85;
+}
+
+html {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: rgb(var(--bg-base));
+  color: rgb(var(--text-primary));
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}

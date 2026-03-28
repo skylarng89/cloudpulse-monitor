@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "vue-tsc --build --force && vite build",
     "build-only": "vite build",
     "dev": "vite",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
@@ -14,9 +14,8 @@
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
-    "axios": "^1.4.0",
     "chart.js": "^4.3.0",
-    "date-fns": "^2.30.0",
+    "pinia": "^3.0.0",
     "vue": "^3.5.31",
     "vue-chartjs": "^5.2.0",
     "vue-router": "^4.2.4"
@@ -32,7 +31,6 @@
     "@vue/tsconfig": "^0.4.0",
     "eslint": "^8.45.0",
     "eslint-plugin-vue": "^9.15.1",
-    "npm-run-all": "^4.1.5",
     "prettier": "^3.0.0",
     "tailwindcss": "^4.2.2",
     "typescript": "~5.1.6",
