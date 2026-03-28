@@ -1,12 +1,19 @@
 # Current Context
 
+**Last Updated:** 2026-03-28
+
 ## Active State
-Currently migrating the CloudPulse Monitor application from a Node.js (Fastify) backend to a Java Spring Boot backend. Switching package management to `pnpm` while maintaining the monorepo structure. Establishing robust deployment methods using Docker.
+Backend E2E testing phase complete. Migration from Node.js (Fastify) to Java Spring Boot 4.0.x is structurally and architecturally complete. All 25 tests passing.
 
 ## Focus
-- All Phases Completed (1-5): The migration from Fastify/SQLite to Spring Boot 4.0.x/PostgreSQL is structurally, architecturally, and procedurally complete. Monorepo configured, security enforced, Java 25 Virtual Threads implemented, and CI/CD active.
-- Next steps: Project maintenance, extending feature parity as needed, and full deployment validation.
+- ✅ Phase 1-5 Complete: Migration from Fastify/SQLite to Spring Boot 4.0.x/PostgreSQL
+- ✅ E2E testing infrastructure established (MockMvc, test profile)
+- 🟡 Next: Extend test coverage for other controllers and scheduling logic
 - Ensuring adherence to the strict engineering master guide (security, resilience, API standards).
 
 ## Blockers
-- None at the moment. Planning phase active.
+None.
+
+## Recent Decisions
+- Use existing PostgreSQL container (port 7000) instead of Testcontainers for tests
+- Added `jackson-datatype-jsr310` for `OffsetDateTime` serialization

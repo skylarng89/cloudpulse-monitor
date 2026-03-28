@@ -2,6 +2,21 @@
 
 ## Unreleased
 ### Added
+- E2E tests for MonitorController (15 tests)
+- Unit tests for NetworkCheckService (10 tests)
+- Jackson configuration with JavaTimeModule for OffsetDateTime serialization
+- Test profile configuration (`application-test.yml`)
+- `cloudpulse_test` database
+
+### Fixed
+- Jackson `InvalidDefinitionException` when serializing entities with `OffsetDateTime` fields
+
+### Changed
+- Migrated from Testcontainers to existing PostgreSQL container for tests
+- Removed `spring-boot-starter-aop` (not available in Spring Boot 4.0.x)
+- Updated test dependencies to Spring Boot 4.0.x compatible versions
+
+### Previous
 - Created Memory Bank documentation.
 - Devised migration plan for transitioning backend from Node.js to Java Spring Boot.
 - Identified latest package versions for the transition: Spring Boot 4.0.x with Java 25, Vue 3.5.31, Vite 8.0.3, and TailwindCSS 4.2.2.

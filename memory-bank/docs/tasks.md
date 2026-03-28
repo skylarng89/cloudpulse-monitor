@@ -2,6 +2,26 @@
 
 Legend: 🔴 Not Started · 🟡 In Progress · ✅ Completed
 
+## Phase 6: E2E Testing
+- [x] ✅ Set up test infrastructure (MockMvc, test profile)
+- [x] ✅ Create MonitorController E2E tests (15 tests)
+- [x] ✅ Create NetworkCheckService unit tests (10 tests)
+- [x] ✅ Fix Jackson JavaTimeModule serialization issue
+- [ ] 🟡 Add tests for other controllers/endpoints
+- [ ] 🟡 Add integration tests for scheduling/check execution logic
+- [ ] 🟡 Test security configuration
+- [ ] 🔴 Add tests for idempotency key cleanup/expiry
+- [ ] 🔴 Add tests for concurrent request handling
+
+## Test Coverage Status
+| Component | Tests | Status |
+|-----------|-------|--------|
+| MonitorController | 15 | ✅ Passing |
+| NetworkCheckService | 10 | ✅ Passing |
+| MonitorRepository | - | 🔴 Not started |
+| Scheduling Logic | - | 🔴 Not started |
+| Security Config | - | 🔴 Not started |
+
 ## Phase 1: Monorepo & Setup (Planning)
 - [x] ✅ Initialize Memory Bank.
 - [x] ✅ Configure PNPM workspace at the root level (`pnpm-workspace.yaml`).
