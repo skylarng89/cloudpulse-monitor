@@ -62,8 +62,8 @@ class MonitorControllerIT {
         dto.setIntervalSeconds(60);
 
         mockMvc.perform(post("/api/monitors")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.name").value("Test Monitor"))
@@ -85,19 +85,19 @@ class MonitorControllerIT {
         String json = objectMapper.writeValueAsString(dto);
 
         mockMvc.perform(post("/api/monitors")
-                        .header("X-Idempotency-Key", idempotencyKey)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+                .header("X-Idempotency-Key", idempotencyKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/monitors")
-                        .header("X-Idempotency-Key", idempotencyKey)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+                .header("X-Idempotency-Key", idempotencyKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
                 .andExpect(status().isCreated());
 
         long count = monitorRepository.count();
-        assert count == 1 : "Idempotency should prevent duplicate creation";
+        assertEquals(1, count, "Idempotency should prevent duplicate creation");
     }
 
     @Test
@@ -108,8 +108,8 @@ class MonitorControllerIT {
         dto.setType("HTTP");
 
         mockMvc.perform(post("/api/monitors")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -121,8 +121,8 @@ class MonitorControllerIT {
         dto.setType("HTTP");
 
         mockMvc.perform(post("/api/monitors")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -134,8 +134,8 @@ class MonitorControllerIT {
         dto.setType("INVALID");
 
         mockMvc.perform(post("/api/monitors")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -148,8 +148,8 @@ class MonitorControllerIT {
         dto.setIntervalSeconds(5);
 
         mockMvc.perform(post("/api/monitors")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -162,8 +162,8 @@ class MonitorControllerIT {
         dto.setIntervalSeconds(100000);
 
         mockMvc.perform(post("/api/monitors")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -176,8 +176,8 @@ class MonitorControllerIT {
         dto.setIntervalSeconds(60);
 
         mockMvc.perform(post("/api/monitors")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.type").value("HTTP"));
     }
@@ -215,7 +215,7 @@ class MonitorControllerIT {
         mockMvc.perform(delete("/api/monitors/{id}", monitor.getId()))
                 .andExpect(status().isNoContent());
 
-        assert !monitorRepository.existsById(monitor.getId());
+        assertFalse(monitorRepository.existsById(monitor.getId()), "Monitor should be deleted");
     }
 
     @Test
@@ -247,8 +247,8 @@ class MonitorControllerIT {
 
     @Test
     void createMonitor_shouldSupportAllTypes() throws Exception {
-        String[] types = {"HTTP", "HTTPS", "TCP", "PING"};
-        
+        String[] types = { "HTTP", "HTTPS", "TCP", "PING" };
+
         for (String type : types) {
             MonitorDto dto = new MonitorDto();
             dto.setName(type + " Monitor");
@@ -257,8 +257,8 @@ class MonitorControllerIT {
             dto.setIntervalSeconds(60);
 
             mockMvc.perform(post("/api/monitors")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(dto)))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(dto)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.type").value(type));
         }
