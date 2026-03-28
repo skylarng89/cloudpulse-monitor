@@ -412,8 +412,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import apiService from '@/services/api'
-import { format } from 'date-fns'
+import { api } from '@/services/api'
+import { formatDateTime } from '@/composables/useTimeFormat'
 import { useToast } from '@/composables/useToast'
 
 /**
@@ -583,11 +583,11 @@ const fetchDashboardData = async (silent = false): Promise<void> => {
     }
     connectionError.value = ''
 
-    const monitorsData = await apiService.getMonitors()
+    const monitorsData = await api.getMonitors()
     const monitorsWithStatus = await Promise.all(
       monitorsData.map(async (monitor: Monitor): Promise<Monitor> => {
         try {
-          const checks = await apiService.getMonitorChecks(monitor.id, { limit: 1 })
+          const checks = await api.getMonitorChecks(monitor.id, { limit: 1 })
           const latestCheck = checks[0]
           return {
             ...monitor,
@@ -627,7 +627,7 @@ const fetchDashboardData = async (silent = false): Promise<void> => {
     }
 
     try {
-      schedulerStatus.value = await apiService.getSchedulerStatus()
+      schedulerStatus.value = await api.getSchedulerStatus()
     } catch (error) {
       schedulerStatus.value = null
     }
@@ -647,7 +647,7 @@ const fetchDashboardData = async (silent = false): Promise<void> => {
 const formatTime = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Never'
   try {
-    return format(new Date(dateString), 'MMM dd, HH:mm')
+    return formatDateTime(dateString)
   } catch (error) {
     return 'Invalid Date'
   }
@@ -701,7 +701,7 @@ const checkMonitor = async (monitorId: number): Promise<void> => {
     checkingMonitors.value.add(monitorId)
     
     // Perform the check
-    await apiService.checkMonitor(monitorId)
+    await api.runMonitorCheck(monitorId)
     
     // Wait a bit then refresh data silently
     setTimeout(() => {
@@ -725,7 +725,7 @@ const triggerManualCheck = async (): Promise<void> => {
     })
     
     // Trigger check all (runs in background)
-    apiService.triggerManualCheck()
+    api.checkAllMonitors()
       .then(() => {
         // Wait a bit then refresh data silently
         setTimeout(() => {

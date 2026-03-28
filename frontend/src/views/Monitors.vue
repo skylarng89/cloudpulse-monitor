@@ -384,7 +384,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import apiService from '@/services/api.js'
+import { api } from '@/services/api'
 import { useToast } from '@/composables/useToast'
 
 interface Monitor {
@@ -526,13 +526,13 @@ const fetchMonitors = async () => {
   try {
     loading.value = true
     connectionError.value = ''
-    const monitorsData = await apiService.getMonitors()
+    const monitorsData = await api.getMonitors()
     
     // Fetch latest check status for each monitor
     const monitorsWithStatus = await Promise.all(
       monitorsData.map(async (monitor: Monitor) => {
         try {
-          const checks = await apiService.getMonitorChecks(monitor.id, { limit: 1 })
+          const checks = await api.getMonitorChecks(monitor.id, { limit: 1 })
           const latestCheck = checks[0]
           return {
             ...monitor,
@@ -630,10 +630,10 @@ const addMonitor = async () => {
     
     if (editingMonitor.value) {
       // Update existing monitor
-      await apiService.updateMonitor(editingMonitor.value.id, newMonitor.value)
+      await api.updateMonitor(editingMonitor.value.id, newMonitor.value)
     } else {
       // Create new monitor
-      await apiService.createMonitor(newMonitor.value)
+      await api.createMonitor(newMonitor.value)
     }
     
     newMonitor.value = { name: '', url: '', type: 'http', interval_seconds: 60 }
@@ -681,7 +681,7 @@ const deleteMonitor = async () => {
 
   try {
     deleting.value = true
-    await apiService.deleteMonitor(deleteTarget.value.id)
+    await api.deleteMonitor(deleteTarget.value.id)
     await fetchMonitors()
     deleteTarget.value = null
     showSuccess('Monitor deleted successfully')
@@ -707,7 +707,7 @@ const deleteBulkMonitors = async () => {
   try {
     deleting.value = true
     const deletePromises = Array.from(selectedMonitors.value).map(id => 
-      apiService.deleteMonitor(id)
+      api.deleteMonitor(id)
     )
     
     await Promise.all(deletePromises)
@@ -725,7 +725,7 @@ const deleteBulkMonitors = async () => {
 
 const checkMonitor = async (monitorId: number) => {
   try {
-    await apiService.checkMonitor(monitorId)
+    await api.runMonitorCheck(monitorId)
     setTimeout(fetchMonitors, 1000)
   } catch (error: any) {
     showError(`Failed to check monitor: ${error.message}`)

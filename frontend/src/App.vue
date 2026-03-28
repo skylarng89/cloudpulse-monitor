@@ -1,74 +1,86 @@
 <template>
-  <div id="app" class="min-h-screen bg-gray-50">
-    <!-- Header with Tailwind -->
-    <header class="sticky top-0 z-50 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 shadow-lg backdrop-blur-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <!-- Logo -->
-          <div class="flex items-center gap-3">
-            <i class="ti ti-activity text-3xl text-white animate-pulse"></i>
-            <span class="text-xl font-bold text-white tracking-tight">CloudPulse</span>
-            <span class="px-3 py-1 text-xs font-semibold text-white bg-white/20 rounded-full uppercase tracking-wider">
-              Monitor
-            </span>
-          </div>
-          
-          <!-- Navigation -->
-          <nav class="flex items-center gap-2">
-            <router-link 
-              to="/" 
-              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
-              active-class="bg-white/25 text-white"
-            >
-              <i class="ti ti-dashboard"></i>
-              <span class="hidden sm:inline">Dashboard</span>
-            </router-link>
-            
-            <router-link 
-              to="/monitors" 
-              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
-              active-class="bg-white/25 text-white"
-            >
-              <i class="ti ti-server"></i>
-              <span class="hidden sm:inline">Monitors</span>
-            </router-link>
-            
-            <router-link 
-              to="/reports" 
-              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/15 rounded-lg transition-all duration-200"
-              active-class="bg-white/25 text-white"
-            >
-              <i class="ti ti-chart-line"></i>
-              <span class="hidden sm:inline">Reports</span>
-            </router-link>
-          </nav>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <router-view />
-    </main>
+  <div class="min-h-screen bg-gray-50 dark:bg-slate-900">
+    <AppSidebar />
     
-    <!-- Toast Notifications -->
+    <div 
+      class="transition-all duration-300 ease-in-out"
+      :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'"
+    >
+      <AppHeader>
+        <template v-if="$route.name === 'dashboard'" #actions>
+          <router-link
+            to="/monitors"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <i class="ti ti-plus"></i>
+            Add Monitor
+          </router-link>
+        </template>
+      </AppHeader>
+      
+      <main class="p-6">
+        <router-view v-slot="{ Component }">
+          <Transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </router-view>
+      </main>
+    </div>
+
+    <Teleport to="body">
+      <Transition name="slide">
+        <div
+          v-if="mobileMenuOpen"
+          class="fixed inset-0 z-50 lg:hidden"
+        >
+          <div 
+            class="absolute inset-0 bg-black/50"
+            @click="closeMobileMenu"
+          />
+          <AppSidebar class="!fixed" />
+        </div>
+      </Transition>
+    </Teleport>
+
     <ToastNotification />
   </div>
 </template>
 
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { useAppStore } from '@/stores/app'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
 import ToastNotification from '@/components/ToastNotification.vue'
+
+const appStore = useAppStore()
+
+const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
+const mobileMenuOpen = computed(() => appStore.mobileMenuOpen)
+
+function closeMobileMenu() {
+  appStore.closeMobileMenu()
+}
 </script>
 
 <style scoped>
-/* Minimal custom styles - Tailwind handles most of it */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-100%);
 }
 </style>

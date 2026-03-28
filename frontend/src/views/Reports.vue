@@ -200,7 +200,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import apiService from '@/services/api'
+import { api } from '@/services/api'
 
 interface Monitor {
   id: number
@@ -217,7 +217,7 @@ const connectionError = ref('')
 
 const fetchMonitors = async () => {
   try {
-    const data = await apiService.getMonitors()
+    const data = await api.getMonitors()
     monitors.value = data
   } catch (error: any) {
     console.error('Failed to fetch monitors:', error)

@@ -1,15 +1,44 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from '@/views/Dashboard.vue'
-import Monitors from '@/views/Monitors.vue'
-import Reports from '@/views/Reports.vue'
 
 const routes = [
-  { path: '/', component: Dashboard },
-  { path: '/monitors', component: Monitors },
-  { path: '/reports', component: Reports }
+  {
+    path: '/',
+    name: 'dashboard',
+    component: () => import('@/views/Dashboard.vue'),
+    meta: {
+      title: 'Dashboard',
+      description: 'Monitor your services in real-time'
+    }
+  },
+  {
+    path: '/monitors',
+    name: 'monitors',
+    component: () => import('@/views/Monitors.vue'),
+    meta: {
+      title: 'Monitors',
+      description: 'Manage your monitoring endpoints'
+    }
+  },
+  {
+    path: '/reports',
+    name: 'reports',
+    component: () => import('@/views/Reports.vue'),
+    meta: {
+      title: 'Reports',
+      description: 'View analytics and uptime statistics'
+    }
+  }
 ]
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+router.beforeEach((to, _from, next) => {
+  const title = to.meta?.title as string | undefined
+  document.title = title ? `${title} - CloudPulse` : 'CloudPulse Monitor'
+  next()
+})
+
+export default router
