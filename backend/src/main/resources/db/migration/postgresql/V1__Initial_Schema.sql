@@ -19,4 +19,13 @@ CREATE TABLE monitor_checks (
     status VARCHAR(50) NOT NULL,
     error_message TEXT
 );
+
 CREATE INDEX idx_monitor_checks_monitor_id ON monitor_checks(monitor_id);
+
+CREATE TABLE idempotency_keys (
+    idempotency_key VARCHAR(255) PRIMARY KEY,
+    operation_type VARCHAR(100) NOT NULL,
+    response_body TEXT NOT NULL,
+    response_status INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

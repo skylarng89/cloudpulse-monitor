@@ -1,7 +1,7 @@
 # CloudPulse Monitor
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-25-orange)]()
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883)]()
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-6db33f)]()
@@ -38,7 +38,7 @@ CloudPulse Monitor solves the need for a self-hosted, lightweight uptime monitor
 - **Automated scheduling** using Java virtual threads for massive parallelism
 - **Modern UI** with dark mode, responsive design, and real-time updates
 
-**Primary Value Proposition:** Deploy a complete uptime monitoring solution in minutes with zero external dependencies (except PostgreSQL). Built for developers who need reliability insights without the complexity of enterprise monitoring platforms.
+**Primary Value Proposition:** Deploy a complete uptime monitoring solution in minutes with support for PostgreSQL, MySQL, or SQLite. Built for developers who need reliability insights without the complexity of enterprise monitoring platforms.
 
 ---
 
@@ -87,7 +87,7 @@ CloudPulse Monitor solves the need for a self-hosted, lightweight uptime monitor
 |-----------|------------|---------|
 | Runtime | Java (OpenJDK Temurin) | 25 |
 | Framework | Spring Boot | 4.0.5 |
-| Database | PostgreSQL | 15+ |
+| Database | PostgreSQL / MySQL / SQLite | 15+ / 8+ / 3.x |
 | ORM | Spring Data JPA / Hibernate | - |
 | Migrations | Flyway | - |
 | Resilience | Resilience4j | 2.2.0 |
@@ -126,9 +126,16 @@ CloudPulse Monitor solves the need for a self-hosted, lightweight uptime monitor
 | Java JDK | 25 | `java --version` |
 | Node.js | 22 | `node --version` |
 | pnpm | 9.x | `pnpm --version` |
-| PostgreSQL | 15 | `psql --version` |
 | Docker | 24.x | `docker --version` |
 | Docker Compose | 2.x | `docker compose version` |
+
+### Database Options (Choose One)
+
+| Database | Minimum Version | Notes |
+|----------|-----------------|-------|
+| PostgreSQL | 15 | Recommended for production |
+| MySQL | 8.0 | Alternative production option |
+| SQLite | 3.x | Development/testing only |
 
 ### Optional Software
 
@@ -155,9 +162,11 @@ git clone <repository-url>
 cd cloudpulse-monitor
 ```
 
-### Step 2: Start PostgreSQL Database
+### Step 2: Choose and Start Database
 
-Using Docker (recommended):
+CloudPulse supports three database options:
+
+#### Option A: PostgreSQL (Recommended for Production)
 
 ```bash
 docker run -d \
@@ -169,7 +178,24 @@ docker run -d \
   postgres:15-alpine
 ```
 
-Or use an existing PostgreSQL instance and note the connection details.
+#### Option B: MySQL
+
+```bash
+docker run -d \
+  --name cloudpulse-db \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e MYSQL_DATABASE=cloudpulse \
+  -p 3306:3306 \
+  mysql:8
+```
+
+#### Option C: SQLite (Development/Testing)
+
+No setup required! SQLite uses a local file. Just create the data directory:
+
+```bash
+mkdir -p data
+```
 
 ### Step 3: Configure Environment Variables
 
@@ -179,19 +205,35 @@ Create `.env` file from the example:
 cp .env.example .env
 ```
 
-Edit `.env` with your database credentials:
+Edit `.env` with your database configuration:
 
+**PostgreSQL:**
 ```bash
-# Database Configuration
+DB_TYPE=postgresql
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=cloudpulse
 DB_USER=postgres
 DB_PASS=postgres
+SPRING_PROFILES_ACTIVE=postgresql
+```
 
-# Application
-SPRING_PROFILES_ACTIVE=dev
-LOG_LEVEL=debug
+**MySQL:**
+```bash
+DB_TYPE=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=cloudpulse
+DB_USER=root
+DB_PASS=root
+SPRING_PROFILES_ACTIVE=mysql
+```
+
+**SQLite:**
+```bash
+DB_TYPE=sqlite
+DB_PATH=./data/cloudpulse.db
+SPRING_PROFILES_ACTIVE=sqlite
 ```
 
 ### Step 4: Install Backend Dependencies & Run
@@ -248,12 +290,12 @@ Open your browser to: **http://localhost:5173**
 
 The frontend proxies API requests to the backend at `http://localhost:8080`.
 
-### Quick Start with Docker Compose
+### Quick Start with Docker Compose (PostgreSQL)
 
 Alternatively, run the entire stack with Docker Compose:
 
 ```bash
-# Build and start all services
+# Build and start all services (uses PostgreSQL by default)
 docker compose up -d
 
 # View logs
@@ -271,7 +313,14 @@ Access the application at: **http://localhost:3001**
 
 ### Environment Variables
 
-#### Backend Configuration
+#### Database Selection
+
+| Variable | Description | Options | Default |
+|----------|-------------|---------|---------|
+| `DB_TYPE` | Database type | `postgresql`, `mysql`, `sqlite` | `postgresql` |
+| `SPRING_PROFILES_ACTIVE` | Database profile | `postgresql`, `mysql`, `sqlite` | `postgresql` |
+
+#### PostgreSQL Configuration
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
@@ -280,7 +329,27 @@ Access the application at: **http://localhost:3001**
 | `DB_NAME` | Database name | `cloudpulse` | Yes |
 | `DB_USER` | Database username | `postgres` | Yes |
 | `DB_PASS` | Database password | `postgres` | Yes |
-| `SPRING_PROFILES_ACTIVE` | Spring profile (`dev`, `prod`) | - | No |
+
+#### MySQL Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `DB_HOST` | MySQL host | `localhost` | Yes |
+| `DB_PORT` | MySQL port | `3306` | Yes |
+| `DB_NAME` | Database name | `cloudpulse` | Yes |
+| `DB_USER` | Database username | `root` | Yes |
+| `DB_PASS` | Database password | `root` | Yes |
+
+#### SQLite Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `DB_PATH` | Database file path | `./data/cloudpulse.db` | No |
+
+#### Backend Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
 | `SERVER_PORT` | Backend server port | `8080` | No |
 
 #### Frontend Configuration
@@ -305,20 +374,27 @@ server: {
 | File | Purpose |
 |------|---------|
 | `backend/src/main/resources/application.yml` | Main Spring Boot configuration |
+| `backend/src/main/resources/application-postgresql.yml` | PostgreSQL-specific configuration |
+| `backend/src/main/resources/application-mysql.yml` | MySQL-specific configuration |
+| `backend/src/main/resources/application-sqlite.yml` | SQLite-specific configuration |
 | `backend/src/main/resources/application-test.yml` | Test environment configuration |
 | `frontend/vite.config.ts` | Vite build and dev server configuration |
 
-### Database Configuration
+### Database Migrations
 
-The application uses Flyway for database migrations. Migrations are located at:
+The application uses Flyway for database migrations. Migrations are database-specific:
 
 ```
 backend/src/main/resources/db/migration/
-├── V1__Initial_Schema.sql
-└── V2__Idempotency.sql
+├── postgresql/
+│   └── V1__Initial_Schema.sql
+├── mysql/
+│   └── V1__Initial_Schema.sql
+└── sqlite/
+    └── V1__Initial_Schema.sql
 ```
 
-Flyway runs automatically on application startup when `spring.flyway.enabled=true` (default).
+Flyway runs automatically on application startup for PostgreSQL and MySQL. SQLite uses Hibernate's `ddl-auto=update` since Flyway doesn't support SQLite natively.
 
 ### Resilience4j Configuration
 
