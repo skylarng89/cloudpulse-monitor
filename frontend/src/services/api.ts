@@ -64,18 +64,18 @@ export const api = {
     })
   },
 
-  async updateMonitor(id: string, data: Partial<Monitor>): Promise<Monitor> {
+  async updateMonitor(id: number | string, data: Partial<Monitor>): Promise<Monitor> {
     return request<Monitor>(`/monitors/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     })
   },
 
-  async deleteMonitor(id: string): Promise<void> {
+  async deleteMonitor(id: number | string): Promise<void> {
     return request<void>(`/monitors/${id}`, { method: 'DELETE' })
   },
 
-  async getMonitorChecks(id: string, params?: Record<string, string | number>): Promise<MonitorCheck[]> {
+  async getMonitorChecks(id: number | string, params?: Record<string, string | number>): Promise<MonitorCheck[]> {
     const query = params
       ? `?${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]))}`
       : ''
@@ -98,7 +98,7 @@ export const api = {
     return request<ApiResponse<void>>('/scheduler/restart', { method: 'POST' })
   },
 
-  async runMonitorCheck(id: string): Promise<MonitorCheck> {
+  async runMonitorCheck(id: number | string): Promise<MonitorCheck> {
     return request<MonitorCheck>(`/scheduler/run/${id}`, { method: 'POST' })
   },
 

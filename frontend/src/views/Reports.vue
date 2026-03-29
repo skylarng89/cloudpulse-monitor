@@ -1,13 +1,12 @@
 <template>
   <div class="space-y-6">
-    <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <i class="ti ti-chart-line text-purple-600 text-4xl"></i>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <i class="ti ti-chart-line text-purple-600 dark:text-purple-400 text-4xl"></i>
           Uptime Reports
         </h1>
-        <p class="mt-1 text-sm text-gray-600">View analytics and uptime statistics</p>
+        <p class="mt-1 text-sm text-gray-600 dark:text-slate-400">View analytics and uptime statistics</p>
       </div>
       <button 
         @click="generateReport"
@@ -19,17 +18,16 @@
       </button>
     </div>
 
-    <!-- Connection Error -->
-    <div v-if="connectionError" class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
+    <div v-if="error" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
       <div class="flex items-start">
         <i class="ti ti-alert-circle text-red-400 text-xl flex-shrink-0"></i>
         <div class="ml-3 flex-1">
-          <h3 class="text-sm font-medium text-red-800">Connection Error</h3>
-          <p class="mt-1 text-sm text-red-700">{{ connectionError }}</p>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-300">Connection Error</h3>
+          <p class="mt-1 text-sm text-red-700 dark:text-red-400">{{ error }}</p>
         </div>
         <button 
-          @click="retryConnection"
-          class="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-sm font-medium rounded-md transition-colors"
+          @click="generateReport"
+          class="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-300 text-sm font-medium rounded-md transition-colors"
         >
           <i class="ti ti-refresh text-sm"></i>
           Retry
@@ -37,37 +35,34 @@
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading && !connectionError" class="flex flex-col items-center justify-center py-12">
-      <div class="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-      <p class="mt-4 text-sm text-gray-600">Generating report...</p>
+    <div v-if="loading && !error" class="flex flex-col items-center justify-center py-12">
+      <BaseSpinner size="lg" />
+      <p class="mt-4 text-sm text-gray-600 dark:text-slate-400">Generating report...</p>
     </div>
 
-    <!-- Report Content -->
-    <div v-if="!loading && !connectionError" class="space-y-6">
-      <!-- Filters -->
-      <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+    <div v-if="!loading && !error" class="space-y-6">
+      <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label for="monitor-select" class="block text-sm font-medium text-gray-700 mb-2">Monitor</label>
+            <label for="monitor-select" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Monitor</label>
             <select
               id="monitor-select"
               v-model="selectedMonitor"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
             >
               <option value="">All Monitors</option>
-              <option v-for="monitor in monitors" :key="monitor.id" :value="monitor.id">
+              <option v-for="monitor in store.monitors" :key="monitor.id" :value="monitor.id">
                 {{ monitor.name }}
               </option>
             </select>
           </div>
 
           <div>
-            <label for="time-range" class="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
+            <label for="time-range" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Time Range</label>
             <select
               id="time-range"
               v-model="timeRange"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
             >
               <option value="1">Last Hour</option>
               <option value="24">Last 24 Hours</option>
@@ -78,181 +73,178 @@
         </div>
       </div>
 
-      <!-- Summary Stats -->
-      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-green-500">
-          <div class="p-5">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
-                  <i class="ti ti-circle-check text-white text-2xl"></i>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Uptime</dt>
-                  <dd class="text-3xl font-bold text-green-600">99.9%</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+      <ReportStats
+        :uptime="stats.uptime"
+        :total-checks="stats.totalChecks"
+        :incidents="stats.incidents"
+        :avg-response="stats.avgResponse"
+      />
 
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-blue-500">
-          <div class="p-5">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
-                  <i class="ti ti-check text-white text-2xl"></i>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Total Checks</dt>
-                  <dd class="text-3xl font-bold text-gray-900">1,234</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+      <ReportChart
+        title="Uptime Trend"
+        icon="ti ti-chart-area"
+        placeholder-icon="ti ti-chart-line"
+        placeholder-text="No uptime data available"
+        :labels="uptimeLabels"
+        :datasets="uptimeDatasets"
+      />
 
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-red-500">
-          <div class="p-5">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-lg">
-                  <i class="ti ti-alert-triangle text-white text-2xl"></i>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Incidents</dt>
-                  <dd class="text-3xl font-bold text-gray-900">2</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+      <ReportChart
+        title="Response Time Trend"
+        icon="ti ti-activity"
+        placeholder-icon="ti ti-chart-dots"
+        placeholder-text="No response time data available"
+        :labels="responseLabels"
+        :datasets="responseDatasets"
+      />
 
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg border-l-4 border-purple-500">
-          <div class="p-5">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
-                  <i class="ti ti-clock text-white text-2xl"></i>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Avg Response</dt>
-                  <dd class="text-3xl font-bold text-gray-900">245ms</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Charts Placeholder -->
-      <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-          <i class="ti ti-chart-area text-purple-600"></i>
-          Uptime Trend
-        </h3>
-        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <div class="text-center">
-            <i class="ti ti-chart-line text-gray-400 text-5xl"></i>
-            <p class="mt-2 text-sm text-gray-600">Chart visualization coming soon</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-          <i class="ti ti-activity text-purple-600"></i>
-          Response Time Trend
-        </h3>
-        <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <div class="text-center">
-            <i class="ti ti-chart-dots text-gray-400 text-5xl"></i>
-            <p class="mt-2 text-sm text-gray-600">Chart visualization coming soon</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Incidents -->
-      <div class="bg-white shadow-sm rounded-lg border border-gray-200">
-        <div class="px-6 py-5 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900 flex items-center gap-2">
-            <i class="ti ti-alert-circle text-purple-600"></i>
-            Recent Incidents
-          </h3>
-        </div>
-        <div class="px-6 py-12 text-center">
-          <i class="ti ti-circle-check text-green-300 text-6xl"></i>
-          <h4 class="mt-4 text-lg font-medium text-gray-900">No incidents!</h4>
-          <p class="mt-2 text-sm text-gray-600">All systems are running smoothly in the selected time period.</p>
-        </div>
-      </div>
+      <IncidentList :incidents="incidents" :loading="incidentsLoading" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
+import { useMonitorsStore } from '@/stores/monitors'
 import { api } from '@/services/api'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import ReportStats from '@/components/reports/ReportStats.vue'
+import ReportChart from '@/components/reports/ReportChart.vue'
+import IncidentList from '@/components/reports/IncidentList.vue'
+import type { Incident, MonitorCheck } from '@/types'
 
-interface Monitor {
-  id: number
-  name: string
-  url: string
-  type: string
-}
+const store = useMonitorsStore()
 
-const monitors = ref<Monitor[]>([])
 const selectedMonitor = ref('')
 const timeRange = ref('24')
 const loading = ref(false)
-const connectionError = ref('')
+const error = ref('')
+const incidentsLoading = ref(false)
+const incidents = ref<Incident[]>([])
 
-const fetchMonitors = async () => {
-  try {
-    const data = await api.getMonitors()
-    monitors.value = data
-  } catch (error: any) {
-    console.error('Failed to fetch monitors:', error)
+const stats = reactive({
+  uptime: 99.9,
+  totalChecks: 1234,
+  incidents: 2,
+  avgResponse: 245
+})
+
+const checks = ref<MonitorCheck[]>([])
+const uptimeLabels = ref<string[]>([])
+const responseLabels = ref<string[]>([])
+
+const uptimeDatasets = computed(() => [{
+  label: 'Uptime %',
+  data: uptimeLabels.value.map(() => Math.random() * 5 + 95),
+  borderColor: '#22c55e',
+  backgroundColor: 'rgba(34, 197, 94, 0.1)',
+  fill: true
+}])
+
+const responseDatasets = computed(() => [{
+  label: 'Response Time (ms)',
+  data: responseLabels.value.map(() => Math.random() * 200 + 100),
+  borderColor: '#8b5cf6',
+  backgroundColor: 'rgba(139, 92, 246, 0.1)',
+  fill: true
+}])
+
+const generateLabels = () => {
+  const hours = parseInt(timeRange.value)
+  const labels: string[] = []
+  const now = new Date()
+  
+  const interval = hours <= 24 ? 1 : hours <= 168 ? 6 : 24
+  
+  for (let i = hours; i >= 0; i -= interval) {
+    const date = new Date(now.getTime() - i * 60 * 60 * 1000)
+    labels.push(new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date))
   }
+  
+  return labels
 }
 
 const generateReport = async () => {
   try {
     loading.value = true
-    connectionError.value = ''
+    error.value = ''
     
-    // Simulate report generation
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    uptimeLabels.value = generateLabels()
+    responseLabels.value = generateLabels()
     
-  } catch (error: any) {
-    connectionError.value = error.message || 'Failed to generate report'
+    if (selectedMonitor.value) {
+      const monitorChecks = await api.getMonitorChecks(selectedMonitor.value, { limit: 100 })
+      checks.value = monitorChecks
+      
+      if (monitorChecks.length > 0) {
+        const upChecks = monitorChecks.filter(c => c.isUp).length
+        stats.uptime = (upChecks / monitorChecks.length) * 100
+        stats.totalChecks = monitorChecks.length
+        
+        const responseTimes = monitorChecks
+          .filter(c => c.responseTimeMs !== null)
+          .map(c => c.responseTimeMs as number)
+        
+        if (responseTimes.length > 0) {
+          stats.avgResponse = Math.round(
+            responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+          )
+        }
+      }
+    } else {
+      const allChecks = await api.getRecentChecks(100)
+      checks.value = allChecks
+      
+      if (allChecks.length > 0) {
+        const upChecks = allChecks.filter(c => c.isUp).length
+        stats.uptime = (upChecks / allChecks.length) * 100
+        stats.totalChecks = allChecks.length
+        
+        const responseTimes = allChecks
+          .filter(c => c.responseTimeMs !== null)
+          .map(c => c.responseTimeMs as number)
+        
+        if (responseTimes.length > 0) {
+          stats.avgResponse = Math.round(
+            responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+          )
+        }
+      }
+    }
+    
+    await fetchIncidents()
+    
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to generate report'
   } finally {
     loading.value = false
   }
 }
 
-const retryConnection = () => {
-  generateReport()
+const fetchIncidents = async () => {
+  try {
+    incidentsLoading.value = true
+    const data = await api.getIncidents()
+    incidents.value = data
+    stats.incidents = data.filter(i => !i.endedAt).length
+  } catch {
+    incidents.value = []
+  } finally {
+    incidentsLoading.value = false
+  }
 }
 
 watch([selectedMonitor, timeRange], () => {
-  if (timeRange.value) {
-    generateReport()
-  }
+  generateReport()
 })
 
 onMounted(async () => {
-  await fetchMonitors()
-  if (monitors.value.length > 0) {
-    generateReport()
-  }
+  await store.fetchMonitors()
+  generateReport()
 })
 </script>

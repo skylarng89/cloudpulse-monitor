@@ -5,15 +5,15 @@ import { api } from '@/services/api'
 
 export const useMonitorsStore = defineStore('monitors', () => {
   const monitors = ref<Monitor[]>([])
-  const checks = ref<Map<string, MonitorCheck[]>>(new Map())
+  const checks = ref<Map<number, MonitorCheck[]>>(new Map())
   const schedulerStatus = ref<SchedulerStatus | null>(null)
-  const checkingMonitors = ref<Set<string>>(new Set())
+  const checkingMonitors = ref<Set<number>>(new Set())
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const activeMonitors = computed(() => monitors.value.filter(m => m.isActive))
-  const monitorsUp = computed(() => monitors.value.filter(m => m.lastCheck?.isUp).length)
-  const monitorsDown = computed(() => monitors.value.filter(m => m.lastCheck && !m.lastCheck.isUp).length)
+  const activeMonitors = computed(() => monitors.value.filter(m => m.is_active ?? m.isActive))
+  const monitorsUp = computed(() => monitors.value.filter(m => m.status === 'up').length)
+  const monitorsDown = computed(() => monitors.value.filter(m => m.status === 'down' || m.status === 'error').length)
 
   async function fetchMonitors() {
     loading.value = true
@@ -28,10 +28,10 @@ export const useMonitorsStore = defineStore('monitors', () => {
     }
   }
 
-  async function fetchMonitorChecks(monitorId: string, limit = 100) {
+  async function fetchMonitorChecks(monitorId: number | string, limit = 100) {
     try {
-      const result = await api.getMonitorChecks(monitorId, { limit })
-      checks.value.set(monitorId, result)
+      const result = await api.getMonitorChecks(String(monitorId), { limit })
+      checks.value.set(Number(monitorId), result)
       return result
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch checks'
@@ -54,34 +54,35 @@ export const useMonitorsStore = defineStore('monitors', () => {
     return monitor
   }
 
-  async function updateMonitor(id: string, data: Partial<Monitor>) {
-    const monitor = await api.updateMonitor(id, data)
-    const index = monitors.value.findIndex(m => m.id === id)
+  async function updateMonitor(id: number | string, data: Partial<Monitor>) {
+    const monitor = await api.updateMonitor(String(id), data)
+    const index = monitors.value.findIndex(m => m.id === id || m.id === String(id))
     if (index > -1) {
       monitors.value[index] = monitor
     }
     return monitor
   }
 
-  async function deleteMonitor(id: string) {
-    await api.deleteMonitor(id)
-    monitors.value = monitors.value.filter(m => m.id !== id)
-    checks.value.delete(id)
+  async function deleteMonitor(id: number | string) {
+    await api.deleteMonitor(String(id))
+    monitors.value = monitors.value.filter(m => m.id !== id && m.id !== String(id))
+    checks.value.delete(Number(id))
   }
 
-  async function runCheck(id: string) {
-    checkingMonitors.value.add(id)
+  async function runCheck(id: number | string) {
+    const numId = Number(id)
+    checkingMonitors.value.add(numId)
     try {
-      const check = await api.runMonitorCheck(id)
-      const monitor = monitors.value.find(m => m.id === id)
+      const check = await api.runMonitorCheck(String(id))
+      const monitor = monitors.value.find(m => m.id === id || m.id === String(id))
       if (monitor) {
-        monitor.lastCheck = check
+        monitor.status = check.isUp ? 'up' : 'down'
       }
-      const existingChecks = checks.value.get(id) || []
-      checks.value.set(id, [check, ...existingChecks])
+      const existingChecks = checks.value.get(numId) || []
+      checks.value.set(numId, [check, ...existingChecks])
       return check
     } finally {
-      checkingMonitors.value.delete(id)
+      checkingMonitors.value.delete(numId)
     }
   }
 
@@ -100,8 +101,8 @@ export const useMonitorsStore = defineStore('monitors', () => {
     await fetchSchedulerStatus()
   }
 
-  function isChecking(id: string) {
-    return checkingMonitors.value.has(id)
+  function isChecking(id: number | string) {
+    return checkingMonitors.value.has(Number(id))
   }
 
   return {

@@ -1,13 +1,19 @@
 export interface Monitor {
-  id: string
+  id: number | string
   name: string
   url: string
-  type: 'HTTP' | 'HTTPS' | 'PING' | 'TCP'
-  intervalSeconds: number
-  timeoutSeconds: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+  type: string
+  interval_seconds: number
+  intervalSeconds?: number
+  timeout_seconds?: number
+  timeoutSeconds?: number
+  is_active?: boolean
+  isActive?: boolean
+  created_at?: string
+  createdAt?: string
+  updated_at?: string
+  updatedAt?: string
+  status?: string
   lastCheck?: MonitorCheck
 }
 
