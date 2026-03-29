@@ -8,7 +8,7 @@
     "build": "vue-tsc --build --force && vite build",
     "build-only": "vite build",
     "dev": "vite",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "lint": "eslint src --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx --fix",
     "format": "prettier --write src/",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force"

@@ -1,12 +1,17 @@
 <template>
-  <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 p-6">
+  <div
+    class="bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 p-6"
+  >
     <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
       <i :class="icon" class="text-purple-600 dark:text-purple-400"></i>
       {{ title }}
     </h3>
     <div class="h-64">
       <Line v-if="chartData" :data="chartData" :options="chartOptions" />
-      <div v-else class="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600">
+      <div
+        v-else
+        class="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600"
+      >
         <div class="text-center">
           <i :class="placeholderIcon" class="text-gray-400 dark:text-slate-500 text-5xl"></i>
           <p class="mt-2 text-sm text-gray-600 dark:text-slate-400">{{ placeholderText }}</p>
@@ -62,12 +67,12 @@ const props = defineProps<{
 const appStore = useAppStore()
 
 const chartData = computed(() => {
-  if (!props.labels.length || !props.datasets.some(d => d.data.length > 0)) {
+  if (!props.labels.length || !props.datasets.some((d) => d.data.length > 0)) {
     return null
   }
   return {
     labels: props.labels,
-    datasets: props.datasets.map(d => ({
+    datasets: props.datasets.map((d) => ({
       ...d,
       tension: d.tension ?? 0.4,
       fill: d.fill ?? false

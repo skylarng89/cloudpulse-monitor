@@ -1,7 +1,9 @@
 <template>
   <BaseModal v-model="isOpen" title="Delete Monitor" size="sm">
     <div class="flex items-center gap-3 mb-4">
-      <div class="flex-shrink-0 w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+      <div
+        class="flex-shrink-0 w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center"
+      >
         <i class="ti ti-alert-triangle text-red-600 dark:text-red-400 text-xl"></i>
       </div>
       <div>
@@ -9,7 +11,9 @@
         <p class="font-medium text-gray-900 dark:text-white">"{{ monitor?.name }}"?</p>
       </div>
     </div>
-    <p class="text-sm text-yellow-700 dark:text-yellow-400 font-medium">This action cannot be undone.</p>
+    <p class="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
+      This action cannot be undone.
+    </p>
 
     <template #footer>
       <button
@@ -43,7 +47,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'confirm': []
+  confirm: []
 }>()
 
 const isOpen = computed({

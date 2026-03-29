@@ -2,7 +2,9 @@
   <BaseModal v-model="isOpen" :title="monitor ? 'Edit Monitor' : 'Add New Monitor'" size="md">
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
-        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Name</label>
+        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >Name</label
+        >
         <input
           id="name"
           v-model="form.name"
@@ -12,11 +14,15 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
           :class="{ 'border-red-500': errors.name }"
         />
-        <p v-if="errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ errors.name }}</p>
+        <p v-if="errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
+          {{ errors.name }}
+        </p>
       </div>
 
       <div>
-        <label for="type" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Type</label>
+        <label for="type" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >Type</label
+        >
         <select
           id="type"
           v-model="form.type"
@@ -26,26 +32,36 @@
           <option value="ping">Ping</option>
           <option value="tcp">TCP Port</option>
         </select>
-        
-        <div class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+
+        <div
+          class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+        >
           <div class="flex items-start gap-2">
-            <i class="ti ti-info-circle text-blue-600 dark:text-blue-400 text-sm mt-0.5 flex-shrink-0"></i>
+            <i
+              class="ti ti-info-circle text-blue-600 dark:text-blue-400 text-sm mt-0.5 flex-shrink-0"
+            ></i>
             <div class="text-xs text-blue-800 dark:text-blue-300">
               <p v-if="form.type === 'http'" class="font-medium mb-1">HTTP/HTTPS Monitoring</p>
               <p v-if="form.type === 'ping'" class="font-medium mb-1">Ping Monitoring</p>
               <p v-if="form.type === 'tcp'" class="font-medium mb-1">TCP Port Monitoring</p>
-              
+
               <p v-if="form.type === 'http'" class="text-blue-700 dark:text-blue-400">
-                Checks if your website is accessible via HTTP/HTTPS.<br>
-                <span class="font-mono bg-blue-100 dark:bg-blue-800/50 px-1 rounded">Example: https://example.com</span>
+                Checks if your website is accessible via HTTP/HTTPS.<br />
+                <span class="font-mono bg-blue-100 dark:bg-blue-800/50 px-1 rounded"
+                  >Example: https://example.com</span
+                >
               </p>
               <p v-if="form.type === 'ping'" class="text-blue-700 dark:text-blue-400">
-                Sends ICMP ping packets to check if server is reachable.<br>
-                <span class="font-mono bg-blue-100 dark:bg-blue-800/50 px-1 rounded">Example: example.com or 192.168.1.1</span>
+                Sends ICMP ping packets to check if server is reachable.<br />
+                <span class="font-mono bg-blue-100 dark:bg-blue-800/50 px-1 rounded"
+                  >Example: example.com or 192.168.1.1</span
+                >
               </p>
               <p v-if="form.type === 'tcp'" class="text-blue-700 dark:text-blue-400">
-                Checks if a specific TCP port is open and accepting connections.<br>
-                <span class="font-mono bg-blue-100 dark:bg-blue-800/50 px-1 rounded">Example: example.com:3306 or 192.168.1.1:22</span>
+                Checks if a specific TCP port is open and accepting connections.<br />
+                <span class="font-mono bg-blue-100 dark:bg-blue-800/50 px-1 rounded"
+                  >Example: example.com:3306 or 192.168.1.1:22</span
+                >
               </p>
             </div>
           </div>
@@ -65,11 +81,17 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-white font-mono text-sm"
           :class="{ 'border-red-500': errors.url }"
         />
-        <p v-if="errors.url" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ errors.url }}</p>
+        <p v-if="errors.url" class="mt-1 text-sm text-red-600 dark:text-red-400">
+          {{ errors.url }}
+        </p>
       </div>
 
       <div>
-        <label for="interval" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Check Interval (seconds)</label>
+        <label
+          for="interval"
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >Check Interval (seconds)</label
+        >
         <input
           id="interval"
           v-model.number="form.interval_seconds"
@@ -80,7 +102,9 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
           :class="{ 'border-red-500': errors.interval }"
         />
-        <p v-if="errors.interval" class="mt-1 text-sm text-red-600 dark:text-red-400">{{ errors.interval }}</p>
+        <p v-if="errors.interval" class="mt-1 text-sm text-red-600 dark:text-red-400">
+          {{ errors.interval }}
+        </p>
       </div>
     </form>
 
@@ -99,7 +123,15 @@
         class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
       >
         <i class="ti ti-check"></i>
-        {{ submitting ? (monitor ? 'Updating...' : 'Adding...') : (monitor ? 'Update Monitor' : 'Add Monitor') }}
+        {{
+          submitting
+            ? monitor
+              ? 'Updating...'
+              : 'Adding...'
+            : monitor
+              ? 'Update Monitor'
+              : 'Add Monitor'
+        }}
       </button>
     </template>
   </BaseModal>
@@ -118,7 +150,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'submit': [data: typeof form.value]
+  submit: [data: typeof form.value]
 }>()
 
 const isOpen = computed({
@@ -136,19 +168,22 @@ const defaultForm = {
 const form = ref({ ...defaultForm })
 const errors = ref<Record<string, string>>({})
 
-watch(() => props.modelValue, (open) => {
-  if (open && props.monitor) {
-    form.value = {
-      name: props.monitor.name,
-      url: props.monitor.url,
-      type: props.monitor.type?.toLowerCase() as 'http' | 'ping' | 'tcp' || 'http',
-      interval_seconds: props.monitor.interval_seconds || 60
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open && props.monitor) {
+      form.value = {
+        name: props.monitor.name,
+        url: props.monitor.url,
+        type: (props.monitor.type?.toLowerCase() as 'http' | 'ping' | 'tcp') || 'http',
+        interval_seconds: props.monitor.interval_seconds || 60
+      }
+    } else if (open) {
+      form.value = { ...defaultForm }
     }
-  } else if (open) {
-    form.value = { ...defaultForm }
+    errors.value = {}
   }
-  errors.value = {}
-})
+)
 
 const urlLabel = computed(() => {
   switch (form.value.type) {
@@ -204,16 +239,19 @@ function validate(): boolean {
         isValid = false
       }
     } else if (form.value.type === 'ping') {
-      const hostPattern = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$/
-      const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
-      
+      const hostPattern =
+        /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/
+      const ipPattern =
+        /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+
       if (!hostPattern.test(form.value.url) && !ipPattern.test(form.value.url)) {
         errors.value.url = 'Please enter a valid hostname or IP address'
         isValid = false
       }
     } else if (form.value.type === 'tcp') {
-      const tcpPattern = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?:[0-9]{1,5}$|^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?:[0-9]{1,5}$/
-      
+      const tcpPattern =
+        /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?:[0-9]{1,5}$|^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?:[0-9]{1,5}$/
+
       if (!tcpPattern.test(form.value.url)) {
         errors.value.url = 'Please enter host:port format (e.g., example.com:3306)'
         isValid = false

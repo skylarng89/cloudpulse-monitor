@@ -1,4 +1,11 @@
-import type { Monitor, MonitorCheck, SchedulerStatus, UptimeStats, Incident, ApiResponse } from '@/types'
+import type {
+  Monitor,
+  MonitorCheck,
+  SchedulerStatus,
+  UptimeStats,
+  Incident,
+  ApiResponse
+} from '@/types'
 
 const API_BASE = '/api'
 
@@ -13,18 +20,15 @@ class ApiError extends Error {
   }
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`
-  
+
   const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...options.headers
     },
-    ...options,
+    ...options
   })
 
   if (!response.ok) {
@@ -60,14 +64,14 @@ export const api = {
   async createMonitor(data: Partial<Monitor>): Promise<Monitor> {
     return request<Monitor>('/monitors', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     })
   },
 
   async updateMonitor(id: number | string, data: Partial<Monitor>): Promise<Monitor> {
     return request<Monitor>(`/monitors/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     })
   },
 
@@ -75,7 +79,10 @@ export const api = {
     return request<void>(`/monitors/${id}`, { method: 'DELETE' })
   },
 
-  async getMonitorChecks(id: number | string, params?: Record<string, string | number>): Promise<MonitorCheck[]> {
+  async getMonitorChecks(
+    id: number | string,
+    params?: Record<string, string | number>
+  ): Promise<MonitorCheck[]> {
     const query = params
       ? `?${new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]))}`
       : ''
@@ -120,7 +127,7 @@ export const api = {
 
   async getUptimeStats(days = 30): Promise<UptimeStats[]> {
     return request<UptimeStats[]>(`/uptime?days=${days}`)
-  },
+  }
 }
 
 export { ApiError }

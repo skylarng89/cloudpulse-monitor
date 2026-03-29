@@ -3,22 +3,24 @@
     class="relative border rounded-lg p-5 hover:shadow-md transition-all duration-200 bg-white dark:bg-gray-800"
     :class="cardClasses"
   >
-    <div 
+    <div
       v-if="isChecking"
       class="absolute inset-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-[2px] rounded-lg flex items-center justify-center z-10"
     >
       <div class="flex flex-col items-center gap-2">
-        <div class="w-8 h-8 border-3 border-purple-200 dark:border-purple-800 border-t-purple-600 rounded-full animate-spin"></div>
+        <div
+          class="w-8 h-8 border-3 border-purple-200 dark:border-purple-800 border-t-purple-600 rounded-full animate-spin"
+        ></div>
         <span class="text-xs font-medium text-purple-700 dark:text-purple-300">Checking...</span>
       </div>
     </div>
-    
+
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-2">
         <i :class="[statusIconClass, 'text-xl']"></i>
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ monitor.name }}</h3>
       </div>
-      <span 
+      <span
         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase cursor-help"
         :class="badgeClasses"
         :title="statusTooltip"
@@ -33,15 +35,15 @@
     </div>
 
     <div class="flex items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
-      <div 
-        v-if="monitor.responseTime" 
+      <div
+        v-if="monitor.responseTime"
         class="flex items-center gap-1 cursor-help"
         :title="responseTimeTooltip"
       >
         <i class="ti ti-clock text-gray-400 dark:text-gray-500"></i>
         <span>{{ monitor.responseTime }}ms</span>
       </div>
-      <div 
+      <div
         class="flex items-center gap-1 cursor-help"
         :title="'Last checked: ' + lastCheckFormatted"
       >
@@ -51,7 +53,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <button 
+      <button
         @click="$emit('check')"
         class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-purple-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
         title="Run check now"
@@ -59,7 +61,7 @@
         <i class="ti ti-refresh text-sm"></i>
         Check Now
       </button>
-      <router-link 
+      <router-link
         to="/monitors"
         class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
         title="Edit monitor settings"
@@ -156,7 +158,8 @@ const responseTimeTooltip = computed(() => {
   if (rt === null || rt === undefined) return ''
   if (rt < 100) return `${rt}ms - Excellent! Very fast response time.`
   if (rt < 300) return `${rt}ms - Good response time. Your service is performing well.`
-  if (rt < 1000) return `${rt}ms - Acceptable response time. Consider optimization if this persists.`
+  if (rt < 1000)
+    return `${rt}ms - Acceptable response time. Consider optimization if this persists.`
   if (rt < 3000) return `${rt}ms - Slow response time. Users may experience delays.`
   return `${rt}ms - Very slow! This needs immediate attention.`
 })

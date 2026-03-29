@@ -1,12 +1,12 @@
 <template>
-  <aside 
+  <aside
     class="fixed inset-y-0 left-0 z-40 flex flex-col bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 transition-all duration-300 ease-in-out"
     :class="collapsed ? 'w-16' : 'w-64'"
   >
     <div class="flex items-center h-16 px-4 border-b border-gray-200 dark:border-slate-700">
       <router-link to="/" class="flex items-center gap-3 overflow-hidden">
         <i class="ti ti-activity text-2xl text-indigo-600 dark:text-indigo-400 flex-shrink-0"></i>
-        <span 
+        <span
           class="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap transition-opacity duration-200"
           :class="collapsed ? 'opacity-0' : 'opacity-100'"
         >
@@ -29,7 +29,7 @@
         :title="collapsed ? item.label : undefined"
       >
         <i class="ti text-xl flex-shrink-0" :class="item.icon"></i>
-        <span 
+        <span
           class="whitespace-nowrap transition-opacity duration-200"
           :class="collapsed ? 'opacity-0 w-0' : 'opacity-100'"
         >
@@ -45,7 +45,7 @@
         :title="collapsed ? themeLabel : undefined"
       >
         <i class="ti text-xl flex-shrink-0" :class="themeIcon"></i>
-        <span 
+        <span
           class="whitespace-nowrap transition-opacity duration-200"
           :class="collapsed ? 'opacity-0 w-0' : 'opacity-100'"
         >
@@ -58,8 +58,11 @@
         class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700 transition-all duration-200"
         :title="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
       >
-        <i class="ti text-xl flex-shrink-0" :class="collapsed ? 'ti-chevrons-right' : 'ti-chevrons-left'"></i>
-        <span 
+        <i
+          class="ti text-xl flex-shrink-0"
+          :class="collapsed ? 'ti-chevrons-right' : 'ti-chevrons-left'"
+        ></i>
+        <span
           class="whitespace-nowrap transition-opacity duration-200"
           :class="collapsed ? 'opacity-0 w-0' : 'opacity-100'"
         >

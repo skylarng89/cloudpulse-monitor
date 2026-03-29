@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-slate-900">
     <AppSidebar />
-    
-    <div 
+
+    <div
       class="transition-all duration-300 ease-in-out"
       :class="sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'"
     >
@@ -17,7 +17,7 @@
           </router-link>
         </template>
       </AppHeader>
-      
+
       <main class="p-6">
         <router-view v-slot="{ Component }">
           <Transition name="fade" mode="out-in">
@@ -29,14 +29,8 @@
 
     <Teleport to="body">
       <Transition name="slide">
-        <div
-          v-if="mobileMenuOpen"
-          class="fixed inset-0 z-50 lg:hidden"
-        >
-          <div 
-            class="absolute inset-0 bg-black/50"
-            @click="closeMobileMenu"
-          />
+        <div v-if="mobileMenuOpen" class="fixed inset-0 z-50 lg:hidden">
+          <div class="absolute inset-0 bg-black/50" @click="closeMobileMenu" />
           <AppSidebar class="!fixed" />
         </div>
       </Transition>

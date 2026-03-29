@@ -7,7 +7,9 @@
       </slot>
     </div>
     <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{ title }}</h3>
-    <p v-if="description" class="mt-2 text-sm text-gray-600 dark:text-gray-400 max-w-sm mx-auto">{{ description }}</p>
+    <p v-if="description" class="mt-2 text-sm text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
+      {{ description }}
+    </p>
     <div v-if="$slots.action" class="mt-6">
       <slot name="action" />
     </div>

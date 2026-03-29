@@ -5,8 +5,8 @@
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
           <i class="ti ti-dashboard text-purple-600 dark:text-purple-400 text-4xl"></i>
           Dashboard
-          <span 
-            v-if="isRefreshing" 
+          <span
+            v-if="isRefreshing"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 rounded-full animate-pulse"
             title="Updating data in background..."
           >
@@ -14,11 +14,16 @@
             Updating
           </span>
         </h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Monitor your services in real-time • Auto-refreshes every {{ refreshLabel }}</p>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Monitor your services in real-time • Auto-refreshes every {{ refreshLabel }}
+        </p>
       </div>
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2">
-          <label for="refresh-interval" class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">
+          <label
+            for="refresh-interval"
+            class="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block"
+          >
             Auto-refresh:
           </label>
           <select
@@ -36,15 +41,15 @@
             <option :value="300">Every 5 mins</option>
           </select>
         </div>
-        <button 
-          @click="refreshData" 
+        <button
+          @click="refreshData"
           :disabled="loading"
           class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
         >
           <i class="ti ti-refresh" :class="{ 'animate-spin': loading }"></i>
           <span>Refresh</span>
         </button>
-        <button 
+        <button
           @click="triggerManualCheck"
           :disabled="monitors.length === 0"
           class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
@@ -55,14 +60,17 @@
       </div>
     </div>
 
-    <div v-if="connectionError" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
+    <div
+      v-if="connectionError"
+      class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-lg shadow-sm"
+    >
       <div class="flex items-start">
         <i class="ti ti-alert-circle text-red-400 text-xl flex-shrink-0"></i>
         <div class="ml-3 flex-1">
           <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Connection Error</h3>
           <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ connectionError }}</p>
         </div>
-        <button 
+        <button
           @click="retryConnection"
           class="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-200 text-sm font-medium rounded-md transition-colors"
         >
@@ -73,7 +81,9 @@
     </div>
 
     <div v-if="loading && !connectionError" class="flex flex-col items-center justify-center py-12">
-      <div class="w-12 h-12 border-4 border-purple-200 dark:border-purple-800 border-t-purple-600 rounded-full animate-spin"></div>
+      <div
+        class="w-12 h-12 border-4 border-purple-200 dark:border-purple-800 border-t-purple-600 rounded-full animate-spin"
+      ></div>
       <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading dashboard data...</p>
     </div>
 
@@ -229,20 +239,22 @@ const fetchDashboardData = async (silent = false) => {
     )
 
     monitors.value = monitorsWithStatus
-    
-    const monitorsWithResponseTime = monitorsWithStatus.filter((m): m is Monitor & { responseTime: number } => 
-      m.responseTime !== null && m.responseTime !== undefined
+
+    const monitorsWithResponseTime = monitorsWithStatus.filter(
+      (m): m is Monitor & { responseTime: number } =>
+        m.responseTime !== null && m.responseTime !== undefined
     )
-    
+
     const totalResponseTime = monitorsWithResponseTime.reduce((acc, m) => acc + m.responseTime, 0)
-    const avgResponseTime = monitorsWithResponseTime.length > 0 
-      ? Math.floor(totalResponseTime / monitorsWithResponseTime.length)
-      : 0
-    
+    const avgResponseTime =
+      monitorsWithResponseTime.length > 0
+        ? Math.floor(totalResponseTime / monitorsWithResponseTime.length)
+        : 0
+
     stats.value = {
       totalMonitors: monitorsData.length,
-      activeCount: monitorsWithStatus.filter(m => m.status === 'up').length,
-      downCount: monitorsWithStatus.filter(m => m.status === 'down').length,
+      activeCount: monitorsWithStatus.filter((m) => m.status === 'up').length,
+      downCount: monitorsWithStatus.filter((m) => m.status === 'down').length,
       avgResponseTime
     }
 
@@ -275,11 +287,12 @@ const checkMonitor = async (monitorId: number) => {
 
 const triggerManualCheck = async () => {
   try {
-    monitors.value.forEach(monitor => {
+    monitors.value.forEach((monitor) => {
       checkingMonitors.value.add(monitor.id)
     })
-    
-    api.checkAllMonitors()
+
+    api
+      .checkAllMonitors()
       .then(() => {
         setTimeout(() => {
           fetchDashboardData(true)
@@ -307,11 +320,11 @@ const retryConnection = () => {
 
 const updateRefreshInterval = () => {
   localStorage.setItem('dashboardRefreshInterval', refreshIntervalSeconds.value.toString())
-  
+
   if (refreshInterval) {
     clearInterval(refreshInterval)
   }
-  
+
   const intervalMs = refreshIntervalSeconds.value * 1000
   refreshInterval = setInterval(() => fetchDashboardData(true), intervalMs)
 }

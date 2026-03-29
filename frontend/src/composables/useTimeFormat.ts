@@ -1,10 +1,10 @@
 const relativeTimeFormat = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 const dateTimeFormat = new Intl.DateTimeFormat('en', {
   dateStyle: 'medium',
-  timeStyle: 'short',
+  timeStyle: 'short'
 })
 const timeFormat = new Intl.DateTimeFormat('en', {
-  timeStyle: 'short',
+  timeStyle: 'short'
 })
 
 const DIVISIONS: { amount: number; name: Intl.RelativeTimeFormatUnit }[] = [
@@ -14,7 +14,7 @@ const DIVISIONS: { amount: number; name: Intl.RelativeTimeFormatUnit }[] = [
   { amount: 7, name: 'days' },
   { amount: 4.34524, name: 'weeks' },
   { amount: 12, name: 'months' },
-  { amount: Number.POSITIVE_INFINITY, name: 'years' },
+  { amount: Number.POSITIVE_INFINITY, name: 'years' }
 ]
 
 export function formatRelativeTime(date: string | Date): string {

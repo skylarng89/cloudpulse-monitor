@@ -11,9 +11,11 @@ export const useMonitorsStore = defineStore('monitors', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  const activeMonitors = computed(() => monitors.value.filter(m => m.is_active ?? m.isActive))
-  const monitorsUp = computed(() => monitors.value.filter(m => m.status === 'up').length)
-  const monitorsDown = computed(() => monitors.value.filter(m => m.status === 'down' || m.status === 'error').length)
+  const activeMonitors = computed(() => monitors.value.filter((m) => m.is_active ?? m.isActive))
+  const monitorsUp = computed(() => monitors.value.filter((m) => m.status === 'up').length)
+  const monitorsDown = computed(
+    () => monitors.value.filter((m) => m.status === 'down' || m.status === 'error').length
+  )
 
   async function fetchMonitors() {
     loading.value = true
@@ -56,7 +58,7 @@ export const useMonitorsStore = defineStore('monitors', () => {
 
   async function updateMonitor(id: number | string, data: Partial<Monitor>) {
     const monitor = await api.updateMonitor(String(id), data)
-    const index = monitors.value.findIndex(m => m.id === id || m.id === String(id))
+    const index = monitors.value.findIndex((m) => m.id === id || m.id === String(id))
     if (index > -1) {
       monitors.value[index] = monitor
     }
@@ -65,7 +67,7 @@ export const useMonitorsStore = defineStore('monitors', () => {
 
   async function deleteMonitor(id: number | string) {
     await api.deleteMonitor(String(id))
-    monitors.value = monitors.value.filter(m => m.id !== id && m.id !== String(id))
+    monitors.value = monitors.value.filter((m) => m.id !== id && m.id !== String(id))
     checks.value.delete(Number(id))
   }
 
@@ -74,7 +76,7 @@ export const useMonitorsStore = defineStore('monitors', () => {
     checkingMonitors.value.add(numId)
     try {
       const check = await api.runMonitorCheck(String(id))
-      const monitor = monitors.value.find(m => m.id === id || m.id === String(id))
+      const monitor = monitors.value.find((m) => m.id === id || m.id === String(id))
       if (monitor) {
         monitor.status = check.isUp ? 'up' : 'down'
       }
@@ -125,6 +127,6 @@ export const useMonitorsStore = defineStore('monitors', () => {
     startScheduler,
     stopScheduler,
     restartScheduler,
-    isChecking,
+    isChecking
   }
 })

@@ -22,30 +22,30 @@ export function useToast() {
   const showToast = (message: string, type: ToastType = 'info', duration: number = 10000) => {
     const id = nextId++
     const toast: Toast = { id, message, type, duration }
-    
+
     toasts.value.push(toast)
-    
+
     // Auto-remove after duration
     if (duration > 0) {
       setTimeout(() => {
         removeToast(id)
       }, duration)
     }
-    
+
     return id
   }
-  
+
   /**
    * Remove a toast by ID
    * @param id - The toast ID to remove
    */
   const removeToast = (id: number) => {
-    const index = toasts.value.findIndex(t => t.id === id)
+    const index = toasts.value.findIndex((t) => t.id === id)
     if (index > -1) {
       toasts.value.splice(index, 1)
     }
   }
-  
+
   /**
    * Convenience methods for different toast types
    */
@@ -53,7 +53,7 @@ export function useToast() {
   const error = (message: string, duration?: number) => showToast(message, 'error', duration)
   const warning = (message: string, duration?: number) => showToast(message, 'warning', duration)
   const info = (message: string, duration?: number) => showToast(message, 'info', duration)
-  
+
   return {
     toasts: readonly(toasts),
     showToast,

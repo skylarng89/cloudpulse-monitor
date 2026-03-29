@@ -10,17 +10,14 @@
       >
         <!-- Icon -->
         <div class="flex-shrink-0">
-          <i
-            class="ti text-xl"
-            :class="getIconClass(toast.type)"
-          ></i>
+          <i class="ti text-xl" :class="getIconClass(toast.type)"></i>
         </div>
-        
+
         <!-- Message -->
         <div class="flex-1 text-sm font-medium">
           {{ toast.message }}
         </div>
-        
+
         <!-- Close Button -->
         <button
           @click="removeToast(toast.id)"

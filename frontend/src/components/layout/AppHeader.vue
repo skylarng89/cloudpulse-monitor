@@ -1,5 +1,7 @@
 <template>
-  <header class="sticky top-0 z-30 h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
+  <header
+    class="sticky top-0 z-30 h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700"
+  >
     <div class="flex items-center justify-between h-full px-6">
       <div class="flex items-center gap-4">
         <button
@@ -8,7 +10,7 @@
         >
           <i class="ti ti-menu-2 text-xl"></i>
         </button>
-        
+
         <div>
           <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
             {{ pageTitle }}
@@ -23,7 +25,7 @@
         <div v-if="$slots.actions">
           <slot name="actions" />
         </div>
-        
+
         <div class="hidden sm:flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <i class="ti ti-clock"></i>
           <span>{{ currentTime }}</span>

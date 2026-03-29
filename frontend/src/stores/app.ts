@@ -11,9 +11,8 @@ export const useAppStore = defineStore('app', () => {
   function applyTheme(t: Theme) {
     const root = document.documentElement
     const isDark =
-      t === 'dark' ||
-      (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    
+      t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+
     if (isDark) {
       root.classList.add('dark')
     } else {
@@ -54,6 +53,6 @@ export const useAppStore = defineStore('app', () => {
     setTheme,
     toggleSidebar,
     toggleMobileMenu,
-    closeMobileMenu,
+    closeMobileMenu
   }
 })

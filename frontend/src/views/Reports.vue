@@ -6,9 +6,11 @@
           <i class="ti ti-chart-line text-purple-600 dark:text-purple-400 text-4xl"></i>
           Uptime Reports
         </h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-slate-400">View analytics and uptime statistics</p>
+        <p class="mt-1 text-sm text-gray-600 dark:text-slate-400">
+          View analytics and uptime statistics
+        </p>
       </div>
-      <button 
+      <button
         @click="generateReport"
         :disabled="loading"
         class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
@@ -18,14 +20,17 @@
       </button>
     </div>
 
-    <div v-if="error" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
+    <div
+      v-if="error"
+      class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-lg shadow-sm"
+    >
       <div class="flex items-start">
         <i class="ti ti-alert-circle text-red-400 text-xl flex-shrink-0"></i>
         <div class="ml-3 flex-1">
           <h3 class="text-sm font-medium text-red-800 dark:text-red-300">Connection Error</h3>
           <p class="mt-1 text-sm text-red-700 dark:text-red-400">{{ error }}</p>
         </div>
-        <button 
+        <button
           @click="generateReport"
           class="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-300 text-sm font-medium rounded-md transition-colors"
         >
@@ -41,10 +46,16 @@
     </div>
 
     <div v-if="!loading && !error" class="space-y-6">
-      <div class="bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 p-6">
+      <div
+        class="bg-white dark:bg-slate-800 shadow-sm rounded-lg border border-gray-200 dark:border-slate-700 p-6"
+      >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label for="monitor-select" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Monitor</label>
+            <label
+              for="monitor-select"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+              >Monitor</label
+            >
             <select
               id="monitor-select"
               v-model="selectedMonitor"
@@ -58,7 +69,11 @@
           </div>
 
           <div>
-            <label for="time-range" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Time Range</label>
+            <label
+              for="time-range"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+              >Time Range</label
+            >
             <select
               id="time-range"
               v-model="timeRange"
@@ -133,39 +148,45 @@ const checks = ref<MonitorCheck[]>([])
 const uptimeLabels = ref<string[]>([])
 const responseLabels = ref<string[]>([])
 
-const uptimeDatasets = computed(() => [{
-  label: 'Uptime %',
-  data: uptimeLabels.value.map(() => Math.random() * 5 + 95),
-  borderColor: '#22c55e',
-  backgroundColor: 'rgba(34, 197, 94, 0.1)',
-  fill: true
-}])
+const uptimeDatasets = computed(() => [
+  {
+    label: 'Uptime %',
+    data: uptimeLabels.value.map(() => Math.random() * 5 + 95),
+    borderColor: '#22c55e',
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    fill: true
+  }
+])
 
-const responseDatasets = computed(() => [{
-  label: 'Response Time (ms)',
-  data: responseLabels.value.map(() => Math.random() * 200 + 100),
-  borderColor: '#8b5cf6',
-  backgroundColor: 'rgba(139, 92, 246, 0.1)',
-  fill: true
-}])
+const responseDatasets = computed(() => [
+  {
+    label: 'Response Time (ms)',
+    data: responseLabels.value.map(() => Math.random() * 200 + 100),
+    borderColor: '#8b5cf6',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    fill: true
+  }
+])
 
 const generateLabels = () => {
   const hours = parseInt(timeRange.value)
   const labels: string[] = []
   const now = new Date()
-  
+
   const interval = hours <= 24 ? 1 : hours <= 168 ? 6 : 24
-  
+
   for (let i = hours; i >= 0; i -= interval) {
     const date = new Date(now.getTime() - i * 60 * 60 * 1000)
-    labels.push(new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date))
+    labels.push(
+      new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date)
+    )
   }
-  
+
   return labels
 }
 
@@ -173,23 +194,23 @@ const generateReport = async () => {
   try {
     loading.value = true
     error.value = ''
-    
+
     uptimeLabels.value = generateLabels()
     responseLabels.value = generateLabels()
-    
+
     if (selectedMonitor.value) {
       const monitorChecks = await api.getMonitorChecks(selectedMonitor.value, { limit: 100 })
       checks.value = monitorChecks
-      
+
       if (monitorChecks.length > 0) {
-        const upChecks = monitorChecks.filter(c => c.isUp).length
+        const upChecks = monitorChecks.filter((c) => c.isUp).length
         stats.uptime = (upChecks / monitorChecks.length) * 100
         stats.totalChecks = monitorChecks.length
-        
+
         const responseTimes = monitorChecks
-          .filter(c => c.responseTimeMs !== null)
-          .map(c => c.responseTimeMs as number)
-        
+          .filter((c) => c.responseTimeMs !== null)
+          .map((c) => c.responseTimeMs as number)
+
         if (responseTimes.length > 0) {
           stats.avgResponse = Math.round(
             responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
@@ -199,16 +220,16 @@ const generateReport = async () => {
     } else {
       const allChecks = await api.getRecentChecks(100)
       checks.value = allChecks
-      
+
       if (allChecks.length > 0) {
-        const upChecks = allChecks.filter(c => c.isUp).length
+        const upChecks = allChecks.filter((c) => c.isUp).length
         stats.uptime = (upChecks / allChecks.length) * 100
         stats.totalChecks = allChecks.length
-        
+
         const responseTimes = allChecks
-          .filter(c => c.responseTimeMs !== null)
-          .map(c => c.responseTimeMs as number)
-        
+          .filter((c) => c.responseTimeMs !== null)
+          .map((c) => c.responseTimeMs as number)
+
         if (responseTimes.length > 0) {
           stats.avgResponse = Math.round(
             responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
@@ -216,9 +237,8 @@ const generateReport = async () => {
         }
       }
     }
-    
+
     await fetchIncidents()
-    
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to generate report'
   } finally {
@@ -231,7 +251,7 @@ const fetchIncidents = async () => {
     incidentsLoading.value = true
     const data = await api.getIncidents()
     incidents.value = data
-    stats.incidents = data.filter(i => !i.endedAt).length
+    stats.incidents = data.filter((i) => !i.endedAt).length
   } catch {
     incidents.value = []
   } finally {

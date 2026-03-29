@@ -1,7 +1,7 @@
 <template>
   <div class="w-full">
-    <label 
-      v-if="label" 
+    <label
+      v-if="label"
       :for="id"
       class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
     >
@@ -9,7 +9,7 @@
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
     <div class="relative">
-      <select 
+      <select
         :id="id"
         :value="modelValue"
         :disabled="disabled"

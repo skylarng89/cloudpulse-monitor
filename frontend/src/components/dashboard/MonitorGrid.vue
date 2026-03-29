@@ -1,5 +1,7 @@
 <template>
-  <div class="shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+  <div
+    class="shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+  >
     <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -31,8 +33,10 @@
     <div v-if="monitors.length === 0" class="px-6 py-12 text-center">
       <i class="ti ti-server-off text-gray-300 dark:text-gray-600 text-6xl"></i>
       <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No monitors configured</h3>
-      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Get started by adding your first monitor</p>
-      <router-link 
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        Get started by adding your first monitor
+      </p>
+      <router-link
         to="/monitors"
         class="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200"
       >
@@ -54,7 +58,7 @@
           Clear Search
         </button>
       </div>
-      
+
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MonitorCard
           v-for="monitor in paginatedMonitors"
@@ -64,8 +68,11 @@
           @check="$emit('check', monitor.id)"
         />
       </div>
-      
-      <div v-if="totalPages > 1" class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+
+      <div
+        v-if="totalPages > 1"
+        class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 dark:border-gray-700 pt-4"
+      >
         <div class="text-sm text-gray-700 dark:text-gray-300">
           {{ paginationInfo }}
         </div>
@@ -78,23 +85,29 @@
             <i class="ti ti-chevron-left text-sm"></i>
             Previous
           </button>
-          
+
           <div class="flex items-center gap-1">
             <button
               v-for="page in totalPages"
               :key="page"
-              v-show="page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)"
+              v-show="
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              "
               @click="goToPage(page)"
               class="inline-flex items-center justify-center w-10 h-10 border rounded-lg text-sm font-medium transition-colors"
               :class="{
-                'bg-purple-600 text-white border-purple-600 dark:border-purple-500': page === currentPage,
-                'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600': page !== currentPage
+                'bg-purple-600 text-white border-purple-600 dark:border-purple-500':
+                  page === currentPage,
+                'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600':
+                  page !== currentPage
               }"
             >
               {{ page }}
             </button>
           </div>
-          
+
           <button
             @click="goToPage(currentPage + 1)"
             :disabled="currentPage === totalPages"
@@ -139,18 +152,21 @@ defineEmits<{
 const currentPage = ref(1)
 const pageSize = 12
 
-watch(() => props.searchQuery, () => {
-  currentPage.value = 1
-})
+watch(
+  () => props.searchQuery,
+  () => {
+    currentPage.value = 1
+  }
+)
 
 const filteredMonitors = computed(() => {
   if (!props.searchQuery.trim()) {
     return props.monitors
   }
   const query = props.searchQuery.toLowerCase().trim()
-  return props.monitors.filter(monitor => 
-    monitor.name.toLowerCase().includes(query) ||
-    monitor.url.toLowerCase().includes(query)
+  return props.monitors.filter(
+    (monitor) =>
+      monitor.name.toLowerCase().includes(query) || monitor.url.toLowerCase().includes(query)
   )
 })
 

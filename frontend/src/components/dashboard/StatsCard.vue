@@ -1,5 +1,5 @@
 <template>
-  <div 
+  <div
     class="overflow-hidden shadow-sm rounded-lg border-l-4 hover:shadow-md transition-shadow duration-200 cursor-help bg-white dark:bg-gray-800"
     :class="borderClass"
     :title="tooltip"
@@ -7,16 +7,15 @@
     <div class="p-5">
       <div class="flex items-center">
         <div class="flex-shrink-0">
-          <div 
-            class="flex items-center justify-center w-12 h-12 rounded-lg"
-            :class="iconBgClass"
-          >
+          <div class="flex items-center justify-center w-12 h-12 rounded-lg" :class="iconBgClass">
             <i :class="[iconClass, 'text-white text-2xl']"></i>
           </div>
         </div>
         <div class="ml-5 w-0 flex-1">
           <dl>
-            <dt class="text-sm font-medium truncate dark:text-gray-400" :class="labelClass">{{ label }}</dt>
+            <dt class="text-sm font-medium truncate dark:text-gray-400" :class="labelClass">
+              {{ label }}
+            </dt>
             <dd class="text-3xl font-bold" :class="valueClass">{{ displayValue }}</dd>
           </dl>
         </div>
@@ -30,18 +29,21 @@ import { computed } from 'vue'
 
 type StatsCardVariant = 'primary' | 'success' | 'danger' | 'info'
 
-const props = withDefaults(defineProps<{
-  label: string
-  value: number | string
-  variant?: StatsCardVariant
-  icon: string
-  tooltip?: string
-  suffix?: string
-}>(), {
-  variant: 'primary',
-  tooltip: '',
-  suffix: ''
-})
+const props = withDefaults(
+  defineProps<{
+    label: string
+    value: number | string
+    variant?: StatsCardVariant
+    icon: string
+    tooltip?: string
+    suffix?: string
+  }>(),
+  {
+    variant: 'primary',
+    tooltip: '',
+    suffix: ''
+  }
+)
 
 const displayValue = computed(() => {
   if (props.value === null || props.value === undefined) return 'N/A'
