@@ -3,6 +3,7 @@ package com.cloudpulse.backend.controller;
 import com.cloudpulse.backend.dto.MonitorDto;
 import com.cloudpulse.backend.model.IdempotencyKey;
 import com.cloudpulse.backend.model.Monitor;
+import com.cloudpulse.backend.model.MonitorCheck;
 import com.cloudpulse.backend.repository.IdempotencyRepository;
 import com.cloudpulse.backend.repository.MonitorCheckRepository;
 import com.cloudpulse.backend.repository.MonitorRepository;
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +53,20 @@ public class MonitorController {
         return monitorRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/checks")
+    public ResponseEntity<List<MonitorCheck>> getMonitorChecks(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "50") int limit) {
+        if (!monitorRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        List<MonitorCheck> checks = checkRepository.findByMonitorIdOrderByCheckedAtDesc(id);
+        if (checks.size() > limit) {
+            checks = checks.subList(0, limit);
+        }
+        return ResponseEntity.ok(checks);
     }
 
     @PostMapping
